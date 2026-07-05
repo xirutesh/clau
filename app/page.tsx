@@ -1,65 +1,303 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Menu, X, Play, HardDrive, Eye, Star, ChevronDown, ChevronUp, Globe, Film, Video, Settings, BarChart3, Trash2, Edit, LogIn, LogOut, ArrowLeft, Info, Layout, Monitor, CreditCard, Loader2, Upload, Ban, Send, Users, Plus, FolderOpen } from "lucide-react";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+const SB_URL="https://ehdtctlhfbvflgfdjhkc.supabase.co";
+const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
+const SB_SVC="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzEzNzE1OCwiZXhwIjoyMDk4NzEzMTU4fQ.tCdQ1rysPZCz01UQiJJO-STbmkaIVSF40Kbw_YCB02s";
+const NOWPAY="4RXWKAK-1V4M63Y-QVVB71D-8HQSRC3";
+const G="#E5A816",R="#C0392B",PK="#F06292";
+const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
+const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
+const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
+const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:12840,fake_users_annual:"+3200"};
+
+function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
+
+const api={
+  h:t=>({"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${t||SB_ANON}`}),
+  ha:()=>({"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${SB_SVC}`}),
+  async get(tb,q="",t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{headers:api.h(t)});const d=await r.json();return Array.isArray(d)?d:[];}catch{return[];}},
+  async getOne(tb,q,t){const d=await api.get(tb,q,t);return d[0]||null;},
+  async post(tb,data,t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}`,{method:"POST",headers:{...api.h(t),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.json();}catch{return null;}},
+  async patch(tb,q,data,t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"PATCH",headers:{...api.h(t),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.ok;}catch{return false;}},
+  async del(tb,q,t){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"DELETE",headers:api.h(t)});return true;}catch{return false;}},
+  async aGet(tb,q=""){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{headers:api.ha()});return r.json();}catch{return[];}},
+  async aPatch(tb,q,d){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"PATCH",headers:{...api.ha(),"Prefer":"return=representation"},body:JSON.stringify(d)});return true;}catch{return false;}},
+};
+function saveAuth(a){try{localStorage.setItem("auth",JSON.stringify(a))}catch{}}
+function loadAuth(){try{const s=localStorage.getItem("auth");return s?JSON.parse(s):null}catch{return null}}
+function clearAuth(){try{localStorage.removeItem("auth")}catch{}}
+
+// Components
+function SiteLogo({size=44}){return<div style={{width:size,height:size,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.7)",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5"><path d="M12 2C9 2 7 5 7 8c0 2 1 3.5 2 4.5C7.5 13.5 4 15 4 18c0 2 3 4 8 4s8-2 8-4c0-3-3.5-4.5-5-5.5 1-1 2-2.5 2-4.5 0-3-2-6-5-6z"/></svg></div>}
+function LI({src,size=40}){return src?<img src={src} alt="" style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:"2px solid rgba(255,255,255,0.7)"}}/>:<SiteLogo size={size}/>}
+function Spin({t}){return<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:40,gap:8,color:"#888"}}><Loader2 size={20} style={{animation:"spin 1s linear infinite"}}/>{t}<style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>}
+function SC({label,value,sub,change,icon,iconBg}){return<div style={{background:"#fff",borderRadius:12,padding:"18px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:G,fontWeight:700,fontSize:13}}>{label}</div><div style={{fontSize:28,fontWeight:800,color:"#1a1a1a",letterSpacing:-1,marginTop:4}}>{value}</div><div style={{fontSize:12,color:"#999",marginTop:2}}>{sub} {change&&<span style={{color:"#27ae60",fontWeight:700}}>{change}</span>}</div></div><div style={{width:42,height:42,borderRadius:10,border:`2px solid ${iconBg}`,display:"flex",alignItems:"center",justifyContent:"center",color:iconBg}}>{icon}</div></div></div>}
+
+function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#888",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
+
+function ImgUp({value,onChange}){
+  const ref=useRef(onChange);ref.current=onChange;
+  const hf=f=>{if(!f||!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>ref.current(e.target.result);r.readAsDataURL(f);};
+  useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/")){hf(it[i].getAsFile());e.preventDefault();return;}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
+  return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:120,height:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
+}
+
+// Channel Page
+function ChPage({ch,config,auth,onAuth}){
+  const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
+  const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("https://api.nowpayments.io/v1/invoice",{method:"POST",headers:{"x-api-key":NOWPAY,"Content-Type":"application/json"},body:JSON.stringify({price_amount:ch.price,price_currency:"usd",order_id:`ch_${ch.id}_${Date.now()}`,order_description:`${ch.name} - 1 Month`})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{window.open(`https://nowpayments.io/payment/?api_key=${NOWPAY}&price_amount=${ch.price}&price_currency=usd`,"_blank");}setPay(false);};
+  return<div>
+    <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
+      <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
+      <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:700,fontSize:16}}>Full Access</div><div style={{color:G,fontSize:14,marginTop:4}}>{ch.name}</div></div>
+      <div style={{padding:"8px 20px 20px"}}><button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button></div>
+    </div></div>
+    <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
+    <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
+    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:12,width:"100%",maxWidth:500,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #eee"}}><span style={{fontSize:13,color:"#555"}}>N:{ch.id} {ch.name}</span><X size={20} style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
+      <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#1a1a1a",paddingTop:"56.25%",position:"relative"}}>{!ch.image_url&&<Film size={50} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
+      {ch.description&&<div style={{padding:"12px 16px",fontSize:14,color:"#444",lineHeight:1.6,borderBottom:"1px solid #eee"}}>{ch.description}</div>}
+      <div style={{background:"#FDE8E8",margin:16,padding:"12px 16px",borderRadius:8,color:R,textAlign:"center",fontSize:14}}>Download link, available after purchases.</div>
+      <div style={{padding:"0 16px 16px",fontSize:14}}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><b>Resolution:</b> {ch.resolution}</div><div><b>Views:</b> {ch.views}</div></div><div style={{marginTop:4}}><b>Size:</b> {ch.size}</div></div>
+    </div></div>}
+  </div>;
+}
+
+// Dropdown Menu
+function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
+  const[exp,setExp]=useState({});const scr=useScreen();
+  const mp=scr.desktop?"14px 60px":"14px 20px",sp=scr.desktop?"10px 60px 10px 88px":"10px 20px 10px 48px";
+  const cats=Array.isArray(config?.categories)?config.categories:defCats;
+  const grp={};(channels||[]).forEach(c=>{if(!grp[c.category])grp[c.category]=[];grp[c.category].push(c);});
+  if(!open)return null;
+  return<div style={{background:G,width:"100%"}}>
+    <div onClick={()=>setExp(p=>({...p,INFO:!p.INFO}))} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}><Info size={16}/>INFO<span style={{marginLeft:"auto",color:"#FFD54F"}}>{exp.INFO?<ChevronUp size={16}/>:<ChevronDown size={16}/>}</span></div>
+    {exp.INFO&&[{k:"telegram",l:"Telegram"},{k:"usc2257",l:"18 USC 2257"},{k:"removal",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{i.l}</div>)}
+    {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];const isG=cat==="GOLD-AREA";return<div key={i}><div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?R:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10}}><Video size={16}/>{cat}{items.length>0&&<span style={{marginLeft:"auto",color:isG?R:"#FFD54F"}}>{exp[cat]?<ChevronUp size={16}/>:<ChevronDown size={16}/>}</span>}</div>{exp[cat]&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{ch.name}</div>)}</div>})}
+    <div style={{borderTop:"1px solid rgba(255,255,255,0.15)",marginTop:4}}>{auth?<>{isAdmin&&<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Settings size={16}/>Admin Panel</div>}<div style={{padding:mp,color:"#fff",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}><span>Welcome : {auth.username||"user"}</span><span onClick={onLogout} style={{color:"#ffcccc",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:14}}><LogOut size={14}/>LogOut</span></div></>:<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><LogIn size={16}/>LogIn</div>}</div>
+  </div>;
+}
+
+// Info Pages
+function InfoP({page,config}){
+  if(page==="telegram")return<div style={{background:"#fff",borderRadius:12,padding:20,margin:16,textAlign:"center"}}><div style={{fontSize:48,marginBottom:12}}>✈️</div><div style={{fontWeight:800,fontSize:20,marginBottom:8}}>Join Our Telegram</div><p style={{color:"#666",fontSize:14,lineHeight:1.6,marginBottom:20}}>Stay updated with the latest content.</p><a href={config?.telegram_link||"#"} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"14px 32px",borderRadius:10,background:"#0088cc",color:"#fff",fontWeight:700,fontSize:16,textDecoration:"none"}}>Open Telegram</a></div>;
+  if(page==="usc2257")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>18 USC 2257</span></div><div style={{padding:"16px 0",fontSize:15,color:"#444",lineHeight:1.7}}><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL PICTURES ARE PRESENTED BY THIRD PARTIES.</p><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL MODELS ARE 18 YEARS OF AGE OR OLDER IN COMPLIANCE WITH 18 USC 2257</p><p style={{fontWeight:600,fontStyle:"italic"}}>All visitors of this website are required to be over 18 years old (over 21 in some locations).</p><div style={{background:"#FFF3E0",borderRadius:10,padding:14,marginTop:16,textAlign:"center"}}><a href="mailto:legal-website@xirute.com" style={{color:"#E65100",fontWeight:700,fontSize:16,textDecoration:"none"}}>legal-website@xirute.com</a></div></div></div>;
+  if(page==="removal")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>Content Removal</span></div><div style={{padding:"16px 0",fontSize:14,color:"#444",lineHeight:1.8}}><p style={{marginBottom:12}}>If you appear in any content and wish to have it removed, submit a removal request.</p><div style={{background:"#E8F5E9",borderRadius:10,padding:14,textAlign:"center"}}><a href="mailto:removal-website@xirute.com" style={{color:"#2E7D32",fontWeight:800,fontSize:17,textDecoration:"none"}}>removal-website@xirute.com</a></div></div></div>;
+  return null;
+}
+
+// Auth
+function Auth({onLogin,onBack,defaultMode}){
+  const[mode,setMode]=useState(defaultMode||"login");const[user,setUser]=useState("");const[pass,setPass]=useState("");const[pass2,setPass2]=useState("");const[err,setErr]=useState("");const[busy,setBusy]=useState(false);
+  const[ok,setOk]=useState("");
+  const inp={width:"100%",padding:"12px 14px",borderRadius:4,border:"1px solid #ccc",fontSize:15,marginBottom:10,boxSizing:"border-box",outline:"none"};
+  const fakeEmail=u=>`${u.toLowerCase().replace(/[^a-z0-9_.-]/g,"")}@siteusers.com`;
+  const go=async()=>{if(!user||!pass)return setErr("Fill in all fields");if(mode==="signup"&&pass.length<6)return setErr("Min 6 characters");if(mode==="signup"&&pass!==pass2)return setErr("Passwords don't match");const email=fakeEmail(user);setBusy(true);setErr("");setOk("");
+    if(mode==="signup"){const r=await fetch(`${SB_URL}/auth/v1/signup`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass,data:{username:user}})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){const m=d.error_description||d.msg||d.message||"Failed";const ms=String(m).toLowerCase();if(ms.includes("already")||ms.includes("email")||ms.includes("exists"))setErr("Username already taken.");else if(ms.includes("password"))setErr("Password too weak. Min 6 characters.");else setErr("Could not create account. Try a different username.");setBusy(false);return;}if(d.identities?.length===0){setErr("Username already taken.");setBusy(false);return;}
+      // Save username to profile
+      if(d.user?.id){await api.aPatch("profiles",`id=eq.${d.user.id}`,{username:user});}
+      // Auto-confirm user via service role (fake emails can't confirm)
+      if(d.user?.id){await fetch(`${SB_URL}/auth/v1/admin/users/${d.user.id}`,{method:"PUT",headers:{"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${SB_SVC}`},body:JSON.stringify({email_confirm:true})}).catch(()=>null);}
+      // Auto-login after confirm
+      const lr=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);
+      if(lr&&lr.ok){const ld=await lr.json();const p=await api.getOne("profiles",`id=eq.${ld.user.id}&select=*`,ld.access_token);const a={token:ld.access_token,user:ld.user,role:p?.role||"user",username:user};saveAuth(a);onLogin(a);return;}
+      setOk("Account created! Log in.");setMode("login");setBusy(false);return;
+    }else{const email=fakeEmail(user);const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){if(r.status>=500)setErr("Server error. Try again later.");else setErr("Invalid username or password.");setBusy(false);return;}const p=await api.getOne("profiles",`id=eq.${d.user.id}&select=*`,d.access_token);const uname=p?.username||user;const a={token:d.access_token,user:d.user,role:p?.role||"user",username:uname};saveAuth(a);onLogin(a);}setBusy(false);};
+  return<div style={{minHeight:"100vh",background:"#e8e8e8",display:"flex",flexDirection:"column"}}><div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}><ArrowLeft size={22} color="#fff" style={{cursor:"pointer"}} onClick={onBack}/><span style={{color:"#fff",fontWeight:900,fontSize:18}}>{mode==="login"?"Authorization":"Registration"}</span></div><div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div style={{background:"#f5f5f5",borderRadius:4,padding:"24px 20px",width:"100%",maxWidth:320,border:"1px solid #ddd"}}>
+    <input placeholder="username" value={user} onChange={e=>{setUser(e.target.value);setErr("")}} style={inp}/>
+    <input placeholder="password" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&mode==="login"&&go()}/>
+    {mode==="signup"&&<input placeholder="password check" type="password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&go()}/>}
+    {ok&&<div style={{color:"#27ae60",fontSize:13,marginBottom:10,textAlign:"center",background:"#E8F5E9",padding:"8px 12px",borderRadius:4,fontWeight:600}}>{ok}</div>}
+    {err&&<div style={{color:R,fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
+    {mode==="login"?<>
+      <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:G,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Authorization"}</button>
+      <button onClick={()=>{setMode("signup");setErr("")}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
+    </>:<>
+      <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Registration"}</button>
+      <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("")}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
+    </>}
+  </div></div></div>;
+}
+
+// Site Settings Tab (with Save button)
+function SiteTab({config,sCfg,inp}){
+  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||""});
+  const[saved,setSaved]=useState(false);
+  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null});setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  return<div style={{padding:16}}>
+    <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🖼️ Site Logo</div>
+      <ImgUp value={f.logo_url} onChange={v=>setF({...f,logo_url:v})}/>
+      <div style={{fontSize:11,color:"#999",marginTop:4}}>Recommended: square image, shown in header as circle</div>
     </div>
-  );
+    <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🌐 Site</div>
+      <label style={{fontSize:12,color:"#888"}}>Telegram Link</label><input value={f.telegram_link} onChange={e=>setF({...f,telegram_link:e.target.value})} style={inp}/>
+      <label style={{fontSize:12,color:"#888"}}>Global Delivery Link</label><input value={f.global_delivery_link} onChange={e=>setF({...f,global_delivery_link:e.target.value})} style={inp}/>
+    </div>
+    <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📊 Fake Users</div>
+      <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Videos, Content Size & Views auto-calculate. Users are fake.</div>
+      <label style={{fontSize:12,color:"#888"}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
+      <label style={{fontSize:12,color:"#888"}}>Annual Growth</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+3200"/>
+    </div>
+    <button onClick={save} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:saved?"#27ae60":G,color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer"}}>{saved?"✅ Saved!":"Save Changes"}</button>
+  </div>;
+}
+
+// Admin Panel
+function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
+  const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
+  const[form,setForm]=useState({name:"",price:"",video_count:"",category:"Action",top_selling:false,resolution:"",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
+  const[users,setUsers]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
+  const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,marginBottom:8,boxSizing:"border-box"};
+  const cats=Array.isArray(config?.categories)?config.categories:defCats;
+  const rawH=Array.isArray(config?.sections)?config.sections:[];
+  const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
+  const homeSecs=[eS("top-selling","Top Selling Section of the Month"),eS("top-viewed","Top Viewed Videos of the Month"),eS("latest","Latest Updates")];
+
+  useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);})},[]);
+
+  const saveCh=async()=>{if(!form.name)return;setSav(true);
+    const rv=Math.floor(Math.random()*(1320-232+1))+232;
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:form.image_url||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
+    if(eCh){const ok=await api.patch("channels",`id=eq.${eCh.id}`,data,auth.token);if(!ok){alert("Save failed. Run the SQL for missing columns.");setSav(false);return;}setECh(null);}else{const r=await api.post("channels",data,auth.token);if(!r||r.message){alert("Add failed: "+(r?.message||"Check columns."));setSav(false);return;}}
+    setForm({name:"",price:"",video_count:"",category:"Action",top_selling:false,resolution:"",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});await reload();setSav(false);};
+  const delSel=async()=>{setSav(true);await api.del("channels",`id=in.(${[...sel].join(",")})`,auth.token);setSel(new Set());setCDel(false);await reload();setSav(false);};
+  const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.patch("site_config","id=eq.1",u,auth.token);};
+  const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));};
+  const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));alert(`Delivered to ${u.username||"user"}`);}};
+  const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
+  const allS=channels.length>0&&sel.size===channels.length;
+
+  // Auto stats
+  const aVids=channels.reduce((a,c)=>a+(c.video_count||0),0);
+  const aViews=channels.reduce((a,c)=>a+(c.views||0),0);
+  const aSizeMB=channels.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
+  const aSize=aSizeMB>1024?`${(aSizeMB/1024).toFixed(2)}GB`:`${aSizeMB.toFixed(0)}MB`;
+  const fUsers=config?.fake_users||12840;
+  const fUA=config?.fake_users_annual||"+3200";
+
+  const tabs=[{k:"channels",l:"Channels",i:<Film size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
+
+  return<div style={{position:"fixed",inset:0,background:"#f5f5f5",zIndex:2000,overflowY:"auto"}}>
+    <div style={{background:"#1a1a1a",color:"#fff",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><Settings size={20} color={G}/><span style={{fontWeight:800,fontSize:16}}>Admin</span></div><div style={{display:"flex",gap:8}}><button onClick={()=>{onClose();if(typeof onLogout==="function")onLogout()}} style={{background:"#555",color:"#fff",border:"none",padding:"6px 12px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4}}><LogOut size={12}/>Sign Out</button><button onClick={onClose} style={{background:G,color:"#fff",border:"none",padding:"6px 16px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13}}>← Site</button></div></div>
+    <div style={{display:"flex",background:"#fff",borderBottom:"2px solid #eee",overflowX:"auto"}}>{tabs.map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{flex:1,minWidth:50,padding:"10px 0",border:"none",cursor:"pointer",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:3,background:tab===t.k?G:"#fff",color:tab===t.k?"#fff":"#777"}}>{t.i}{t.l}</button>)}</div>
+
+    {tab==="channels"&&<div style={{padding:16}}>
+      <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
+        <input placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}/>
+        <textarea placeholder="Description (shown when user clicks the product)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{...inp,minHeight:50,resize:"vertical"}}/>
+        <div style={{display:"flex",gap:8}}><input placeholder="Price $" type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} style={{...inp,flex:1}}/><input placeholder="Total Count" type="number" value={form.video_count} onChange={e=>setForm({...form,video_count:e.target.value})} style={{...inp,flex:1}}/></div>
+        <div style={{display:"flex",gap:8}}><input placeholder="Resolution" value={form.resolution} onChange={e=>setForm({...form,resolution:e.target.value})} style={{...inp,flex:1}}/><input placeholder="Size" value={form.size} onChange={e=>setForm({...form,size:e.target.value})} style={{...inp,flex:1}}/></div>
+        <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
+        <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:4}}>Image:</div>
+        <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})}/>
+        <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
+        <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:6}}>Show in:</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.top_selling} onChange={e=>setForm({...form,top_selling:e.target.checked})}/>Top Selling</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_top_viewed} onChange={e=>setForm({...form,section_top_viewed:e.target.checked})}/>Top Viewed</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
+        <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:eCh?"#27ae60":G}}>{sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm({name:"",price:"",video_count:"",category:"Action",top_selling:false,resolution:"",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""})}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#666",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
+      </div>
+      <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={allS} onChange={()=>setSel(allS?new Set():new Set(channels.map(c=>c.id)))} style={{width:18,height:18}}/>{allS?"Deselect":"Select"} All ({channels.length})</label>{sel.size>0&&(!cDel?<button onClick={()=>setCDel(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>Delete ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delSel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm</button><button onClick={()=>setCDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#666",cursor:"pointer",fontSize:11}}>No</button></div>)}</div>
+      {channels.map(ch=><div key={ch.id} style={{background:sel.has(ch.id)?"#FFF8E1":"#fff",borderRadius:10,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,border:sel.has(ch.id)?`2px solid ${G}`:"2px solid transparent"}}><input type="checkbox" checked={sel.has(ch.id)} onChange={()=>{const n=new Set(sel);n.has(ch.id)?n.delete(ch.id):n.add(ch.id);setSel(n)}} style={{width:18,height:18}}/>{ch.image_url&&<img src={ch.image_url} alt="" style={{width:50,height:28,objectFit:"cover",borderRadius:4}}/>}<div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14}}>{ch.name} {ch.top_selling&&<span style={{fontSize:10,background:"#FFF3E0",color:"#E65100",padding:"2px 6px",borderRadius:4}}>TOP</span>} {ch.section_top_viewed&&<span style={{fontSize:10,background:"#E3F2FD",color:"#1565C0",padding:"2px 6px",borderRadius:4}}>VIEWED</span>} {ch.section_latest&&<span style={{fontSize:10,background:"#E8F5E9",color:"#2E7D32",padding:"2px 6px",borderRadius:4}}>LATEST</span>}</div><div style={{fontSize:11,color:"#888",marginTop:2}}>{ch.category} · ${ch.price} · {ch.video_count} · {ch.resolution||"—"} · 👁 {ch.views||0}</div></div><button onClick={()=>startE(ch)} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div>)}
+    </div>}
+
+    {tab==="users"&&<div style={{padding:16}}><div style={{fontWeight:700,fontSize:16,marginBottom:12}}>👥 Users ({users.length})</div>{users.map(u=><div key={u.id} style={{background:u.banned?"#FDE8E8":"#fff",borderRadius:10,padding:14,marginBottom:8,border:u.banned?"2px solid #fcc":"1px solid #eee"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:700,fontSize:14}}>{u.username||"user"}</div><div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:u.role==="admin"?"#E65100":"#E8F5E9",color:u.role==="admin"?"#fff":"#2E7D32"}}>{(u.role||"user").toUpperCase()}</span>{u.banned&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:R,color:"#fff"}}>BANNED</span>}{u.delivery_link&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:"#E3F2FD",color:"#1565C0"}}>DELIVERED</span>}</div></div><div style={{display:"flex",gap:5}}>{u.role!=="admin"&&<button onClick={()=>ban(u.id,u.banned)} style={{padding:"6px 10px",borderRadius:8,border:"none",background:u.banned?"#27ae60":R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>{u.banned?"Unban":"Ban"}</button>}{u.role!=="admin"&&<button onClick={()=>{const l=prompt("Delivery link:",config?.global_delivery_link||"");if(l)deliver(u.id,l)}} style={{padding:"6px 10px",borderRadius:8,border:"none",background:"#1565C0",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}><Send size={11}/> Deliver</button>}</div></div>{u.delivery_link&&<div style={{marginTop:8,fontSize:12,color:"#1565C0",background:"#E3F2FD",padding:"6px 10px",borderRadius:6,wordBreak:"break-all"}}>📦 {u.delivery_link}</div>}</div>)}</div>}
+
+    {tab==="categories"&&<div style={{padding:16}}>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:12}}>📁 Sidebar Categories</div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}><input placeholder="New category name" value={newCat} onChange={e=>setNewCat(e.target.value)} style={{...inp,flex:1,marginBottom:0}}/><button onClick={()=>{if(!newCat.trim())return;sCfg({categories:[...cats,newCat.trim()]});setNewCat("")}} style={{padding:"10px 16px",borderRadius:8,border:"none",background:G,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}><Plus size={14}/> Add</button></div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}><button onClick={()=>sCfg({categories:["INFO"]})} style={{padding:"8px 16px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>🗑 Delete All (keep INFO)</button></div>
+      {cats.map((cat,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:14}}>{cat==="GOLD-AREA"?<span style={{color:R}}>{cat}</span>:cat}</div>{cat!=="INFO"&&<button onClick={()=>sCfg({categories:cats.filter((_,j)=>j!==i)})} style={{width:32,height:32,borderRadius:8,border:"1px solid #fdd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Trash2 size={13} color={R}/></button>}</div>)}
+    </div>}
+
+    {tab==="homepage"&&<div style={{padding:16}}>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:12}}>🏠 Homepage Sections</div>
+      {homeSecs.map(sec=><div key={sec.id} style={{background:"#fff",borderRadius:10,padding:14,marginBottom:10}}>{eSec===sec.id?<div><input value={secT} onChange={e=>setSecT(e.target.value)} style={inp}/><div style={{display:"flex",gap:8}}><button onClick={()=>{sCfg({sections:homeSecs.map(s=>s.id===sec.id?{...s,title:secT}:s)});setESec(null)}} style={{flex:1,padding:10,border:"none",borderRadius:8,background:"#27ae60",color:"#fff",fontWeight:700,cursor:"pointer"}}>Save</button><button onClick={()=>setESec(null)} style={{padding:10,border:"1px solid #ddd",borderRadius:8,color:"#666",cursor:"pointer",background:"#fff"}}>Cancel</button></div></div>:<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:700,fontSize:14,color:sec.visible?"#1a1a1a":"#bbb"}}>{sec.title}</div><div style={{fontSize:11,color:sec.visible?"#27ae60":"#ccc",marginTop:2}}>{sec.visible?"✅ Visible":"⬜ Hidden"}</div></div><div style={{display:"flex",gap:5}}><button onClick={()=>sCfg({sections:homeSecs.map(s=>s.id===sec.id?{...s,visible:!s.visible}:s)})} style={{padding:"6px 12px",borderRadius:8,border:"1px solid #ddd",background:sec.visible?"#e8f5e9":"#fff",cursor:"pointer",fontSize:12}}>{sec.visible?"Hide":"Show"}</button><button onClick={()=>{setESec(sec.id);setSecT(sec.title)}} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div></div>}</div>)}
+    </div>}
+
+    {tab==="site"&&<SiteTab config={config} sCfg={sCfg} inp={inp}/>}
+
+    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Videos",v:aVids,c:"#27ae60"},{l:"Content Size",v:aSize,c:"#e67e22"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:12,color:"#888",fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
+  </div>;
+}
+
+// Route persistence via localStorage (not URL hash — avoids hydration issues)
+function saveRoute(r){try{localStorage.setItem("route",JSON.stringify(r))}catch{}}
+function loadRoute(){try{const s=localStorage.getItem("route");return s?JSON.parse(s):null}catch{return null}}
+function clearRoute(){try{localStorage.removeItem("route")}catch{}}
+
+// Main
+export default function App(){
+  const[mO,setMO]=useState(false);const[chs,setChs]=useState([]);const[cfg,setCfg]=useState(defCfg);
+  const[sCh,setSCh]=useState(null);const[iP,setIP]=useState(null);const[auth,setAuth]=useState(null);
+  const[sA,setSA]=useState(false);const[sAd,setSAd]=useState(false);const[aM,setAM]=useState("signup");
+  const[mounted,setMounted]=useState(false);const[ready,setReady]=useState(false);
+  const scr=useScreen();const isA=auth?.role==="admin";
+  const[pendCh,setPendCh]=useState(null);
+
+  const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch)saveRoute({t:"ch",id:ch.id});else clearRoute();};
+  const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p)saveRoute({t:"info",p});else clearRoute();};
+  const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();};
+
+  // Mount: restore auth + route from localStorage (sync, no hydration issues)
+  useEffect(()=>{
+    const s=loadAuth();if(s){setAuth(s);setSAd(false);setSA(false);}
+    const r=loadRoute();
+    if(r&&r.t==="info")setIP(r.p);
+    else if(r&&r.t==="ch")setPendCh(r.id);
+    setMounted(true);
+  },[]);
+
+  // Load data + restore pending channel
+  const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id",auth?.token);const f=await api.getOne("site_config","id=eq.1&select=*",auth?.token);setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
+    const r=loadRoute();if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
+  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[auth?.token]);
+  useEffect(()=>{load()},[load]);
+
+  if(!mounted)return null;
+
+  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={()=>{setSAd(false);load()}} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false)}}/>;
+  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false)}} onBack={()=>setSA(false)}/>;
+
+  // If there's a pending channel, show header + spinner (not homepage)
+  const waiting=pendCh!==null&&!sCh;
+
+  const rawH=Array.isArray(cfg.sections)?cfg.sections:[];
+  const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
+  const tS=eS("top-selling","Top Selling Section of the Month"),tV=eS("top-viewed","Top Viewed Videos of the Month"),la=eS("latest","Latest Updates");
+
+  const aVids=chs.reduce((a,c)=>a+(c.video_count||0),0);
+  const aViews=chs.reduce((a,c)=>a+(c.views||0),0);
+  const aSMB=chs.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
+  const aS=aSMB>1024?`${(aSMB/1024).toFixed(2)}GB`:`${aSMB.toFixed(0)}MB`;
+  const fU=cfg.fake_users||12840;const fUA=cfg.fake_users_annual||"+3200";
+  const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
+
+  return<div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2",minHeight:"100vh"}}>
+    <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
+
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?setSAd(true):(setAM("login"),setSA(true))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false)}} onInfo={p=>navInfo(p)}/>
+
+    {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
+    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true)}}/></div>
+    :waiting?<div style={{padding:40,textAlign:"center"}}><Spin t=""/></div>
+    :<>
+      <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
+        <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0"/>
+        <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0"/>
+        <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B"/>
+        <SC label="Users" value={fU} sub="new Users (annual)" change={fUA} icon={<Star size={20}/>} iconBg="#F5D6A0"/>
+      </div>
+
+      {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
+
+      {tV.visible!==false&&chs.filter(c=>c.section_top_viewed).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tV.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_top_viewed).map(ch=><VT key={`tv-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div><div style={{height:3,background:G}}/></>}
+
+      {la.visible!==false&&chs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
+
+      <div style={{background:G,padding:"20px 16px",textAlign:"center",color:"#fff",fontSize:12}}>© 2026 XIRUTE.COM — All Rights Reserved</div>
+    </>}
+  </div>;
 }
