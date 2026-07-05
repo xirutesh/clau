@@ -24,6 +24,8 @@ const api={
   async del(tb,q,t){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"DELETE",headers:api.h(t)});return true;}catch{return false;}},
   async aGet(tb,q=""){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{headers:api.ha()});return r.json();}catch{return[];}},
   async aPatch(tb,q,d){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"PATCH",headers:{...api.ha(),"Prefer":"return=representation"},body:JSON.stringify(d)});return true;}catch{return false;}},
+  async aPost(tb,data){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}`,{method:"POST",headers:{...api.ha(),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.json();}catch{return null;}},
+  async aDel(tb,q){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"DELETE",headers:api.ha()});return true;}catch{return false;}},
 };
 function saveAuth(a){try{localStorage.setItem("auth",JSON.stringify(a))}catch{}}
 function loadAuth(){try{const s=localStorage.getItem("auth");return s?JSON.parse(s):null}catch{return null}}
@@ -153,8 +155,12 @@ function SiteTab({config,sCfg,inp}){
 }
 
 // Admin Panel
+function Toast({msg,type,onDone}){useEffect(()=>{const t=setTimeout(onDone,2500);return()=>clearTimeout(t)},[onDone]);return<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:type==="ok"?"#27ae60":type==="err"?"#e74c3c":"#f39c12",color:"#fff",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",animation:"fadeIn 0.3s"}}><style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>{msg}</div>}
+
 function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
+  const[toast,setToast]=useState(null);
+  const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
@@ -171,13 +177,13 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const saveCh=async()=>{if(!form.name)return;setSav(true);
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:form.image_url||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
-    if(eCh){const ok=await api.patch("channels",`id=eq.${eCh.id}`,data,auth.token);if(!ok){alert("Save failed. Run the SQL for missing columns.");setSav(false);return;}setECh(null);}else{const r=await api.post("channels",data,auth.token);if(!r||r.message){alert("Add failed: "+(r?.message||"Check columns."));setSav(false);return;}}
+    if(eCh){const ok=await api.aPatch("channels",`id=eq.${eCh.id}`,data);if(!ok){notify("Save failed","err");setSav(false);return;}setECh(null);notify("✅ Channel saved");}else{const r=await api.aPost("channels",data);if(!r||r.message){notify("Add failed: "+(r?.message||"Error"),"err");setSav(false);return;}notify("✅ Channel added");}
     setForm(defF());await reload();setSav(false);};
-  const delSel=async()=>{setSav(true);await api.del("channels",`id=in.(${[...sel].join(",")})`,auth.token);setSel(new Set());setCDel(false);await reload();setSav(false);};
-  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.post("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv},auth.token);}setBulkNames("");await reload();setBulkSav(false);};
-  const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);};
-  const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));};
-  const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));alert(`Delivered to ${u.username||"user"}`);}};
+  const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
+  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${lines.length} channels added`);setBulkNames("");await reload();setBulkSav(false);};
+  const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
+  const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
+  const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
   const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
   const allS=channels.length>0&&sel.size===channels.length;
 
@@ -192,6 +198,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const tabs=[{k:"channels",l:"Channels",i:<Film size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
 
   return<div style={{position:"fixed",inset:0,background:"#f5f5f5",zIndex:2000,overflowY:"auto"}}>
+    {toast&&<Toast key={toast.k} msg={toast.msg} type={toast.type} onDone={()=>setToast(null)}/>}
     <div style={{background:"#1a1a1a",color:"#fff",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><Settings size={20} color={G}/><span style={{fontWeight:800,fontSize:16}}>Admin</span></div><div style={{display:"flex",gap:8}}><button onClick={()=>{onClose();if(typeof onLogout==="function")onLogout()}} style={{background:"#555",color:"#fff",border:"none",padding:"6px 12px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4}}><LogOut size={12}/>Sign Out</button><button onClick={onClose} style={{background:G,color:"#fff",border:"none",padding:"6px 16px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13}}>← Site</button></div></div>
     <div style={{display:"flex",background:"#fff",borderBottom:"2px solid #eee",overflowX:"auto"}}>{tabs.map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{flex:1,minWidth:50,padding:"10px 0",border:"none",cursor:"pointer",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:3,background:tab===t.k?G:"#fff",color:tab===t.k?"#fff":"#777"}}>{t.i}{t.l}</button>)}</div>
 
@@ -224,9 +231,9 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
     {tab==="categories"&&<div style={{padding:16}}>
       <div style={{fontWeight:700,fontSize:16,marginBottom:12}}>📁 Sidebar Categories</div>
-      <div style={{marginBottom:12}}><textarea placeholder={"Add categories (one per line)\nExample:\nGOLD AREA 2\nGOLD 3\nGOLD 4"} value={newCat} onChange={e=>setNewCat(e.target.value)} style={{...inp,minHeight:70,resize:"vertical"}}/><button onClick={()=>{const lines=newCat.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;sCfg({categories:[...cats,...lines]});setNewCat("")}} style={{width:"100%",padding:10,borderRadius:8,border:"none",background:G,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}><Plus size={14}/> Add</button></div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}><button onClick={()=>sCfg({categories:["INFO"]})} style={{padding:"8px 16px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>🗑 Delete All (keep INFO)</button></div>
-      {cats.map((cat,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:14}}>{cat==="GOLD-AREA"?<span style={{color:R}}>{cat}</span>:cat}</div><div style={{display:"flex",gap:4}}>{cat!=="INFO"&&i>0&&<button onClick={()=>{const n=[...cats];[n[i-1],n[i]]=[n[i],n[i-1]];sCfg({categories:n})}} style={{width:28,height:28,borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronUp size={13}/></button>}{cat!=="INFO"&&i<cats.length-1&&<button onClick={()=>{const n=[...cats];[n[i],n[i+1]]=[n[i+1],n[i]];sCfg({categories:n})}} style={{width:28,height:28,borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronDown size={13}/></button>}{cat!=="INFO"&&<button onClick={()=>sCfg({categories:cats.filter((_,j)=>j!==i)})} style={{width:28,height:28,borderRadius:6,border:"1px solid #fdd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Trash2 size={13} color={R}/></button>}</div></div>)}
+      <div style={{marginBottom:12}}><textarea placeholder={"Add categories (one per line)\nExample:\nGOLD AREA 2\nGOLD 3\nGOLD 4"} value={newCat} onChange={e=>setNewCat(e.target.value)} style={{...inp,minHeight:70,resize:"vertical"}}/><button onClick={()=>{const lines=newCat.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;sCfg({categories:[...cats,...lines]});setNewCat("");notify(`✅ ${lines.length} category(s) added`)}} style={{width:"100%",padding:10,borderRadius:8,border:"none",background:G,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}><Plus size={14}/> Add</button></div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}><button onClick={()=>{if(!confirm("Delete ALL categories? (INFO stays)"))return;sCfg({categories:["INFO"]});notify("🗑 All categories deleted")}} style={{padding:"8px 16px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>🗑 Delete All (keep INFO)</button></div>
+      {cats.map((cat,i)=><div key={i} style={{background:"#fff",borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:14}}>{cat==="GOLD-AREA"?<span style={{color:R}}>{cat}</span>:cat}</div><div style={{display:"flex",gap:4}}>{cat!=="INFO"&&i>0&&<button onClick={()=>{const n=[...cats];[n[i-1],n[i]]=[n[i],n[i-1]];sCfg({categories:n})}} style={{width:28,height:28,borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronUp size={13}/></button>}{cat!=="INFO"&&i<cats.length-1&&<button onClick={()=>{const n=[...cats];[n[i],n[i+1]]=[n[i+1],n[i]];sCfg({categories:n})}} style={{width:28,height:28,borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><ChevronDown size={13}/></button>}{cat!=="INFO"&&<button onClick={()=>{if(!confirm(`Delete "${cat}"?`))return;sCfg({categories:cats.filter((_,j)=>j!==i)});notify(`🗑 "${cat}" deleted`)}} style={{width:28,height:28,borderRadius:6,border:"1px solid #fdd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Trash2 size={13} color={R}/></button>}</div></div>)}
     </div>}
 
     {tab==="homepage"&&<div style={{padding:16}}>
@@ -257,7 +264,7 @@ export default function App(){
 
   const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){saveRoute({t:"ch",id:ch.id});
     // Auto-increment views
-    api.patch("channels",`id=eq.${ch.id}`,{views:(ch.views||0)+1},auth?.token).then(()=>{setChs(prev=>prev.map(c=>c.id===ch.id?{...c,views:(c.views||0)+1}:c));});
+    api.aPatch("channels",`id=eq.${ch.id}`,{views:(ch.views||0)+1}).then(()=>{setChs(prev=>prev.map(c=>c.id===ch.id?{...c,views:(c.views||0)+1}:c));});
   }else clearRoute();};
   const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p)saveRoute({t:"info",p});else clearRoute();};
   const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();};
