@@ -77,10 +77,11 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
   const grp={};(channels||[]).forEach(c=>{if(!grp[c.category])grp[c.category]=[];grp[c.category].push(c);});Object.keys(grp).forEach(k=>grp[k].sort((a,b)=>(a.name||"").localeCompare(b.name||"")));
   if(!open)return null;
   return<div style={{background:G,width:"100%"}}>
+    <style>{`@keyframes goldBlink{0%,100%{color:#C0392B}50%{color:#fff}}`}</style>
     <div onClick={()=>setExp(p=>({...p,INFO:!p.INFO}))} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}><Info size={16}/>INFO <span style={{color:"#FFD54F"}}>▼</span></div>
     {exp.INFO&&[{k:"p053",l:"Telegram"},{k:"p041",l:"18 USC 2257"},{k:"p072",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{i.l}</div>)}
     {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];const isG=cat==="GOLD-AREA";const isExp=exp[cat];return<div key={i}>
-      <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?R:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10,background:isExp?"rgba(0,0,0,0.08)":"transparent"}}><Video size={16}/>{cat}{items.length>0&&<span style={{color:isG?R:"#FFD54F"}}>▼</span>}</div>
+      <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?undefined:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10,background:isExp?"rgba(0,0,0,0.08)":"transparent",animation:isG?"goldBlink 1s infinite":"none"}}><Video size={16} fill={isG?"currentColor":"#fff"} strokeWidth={0}/>{cat}{items.length>0&&<span style={{color:isG?undefined:"#FFD54F"}}>▼</span>}</div>
       {isExp&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{ch.name}</div>)}
     </div>})}
     <div style={{borderTop:"1px solid rgba(255,255,255,0.15)",marginTop:4}}>{auth?<>{isAdmin&&<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Settings size={16}/>Admin Panel</div>}<div style={{padding:mp,color:"#fff",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}><span>Welcome : {auth.username||"user"}</span><span onClick={onLogout} style={{color:"#ffcccc",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:14}}><LogOut size={14}/>LogOut</span></div></>:<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><LogIn size={16}/>LogIn</div>}</div>
@@ -313,7 +314,7 @@ export default function App(){
   if(!mounted)return null;
 
   if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);clearRoute();}}/>;
-  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false);clearRoute()}} onBack={()=>{setSA(false);clearRoute()}}/>;
+  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false);clearRoute();window.scrollTo(0,0)}} onBack={()=>{setSA(false);clearRoute();window.scrollTo(0,0)}}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
   const waiting=pendCh!==null&&!sCh;
@@ -330,11 +331,11 @@ export default function App(){
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
   return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
-    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;}`}</style>
+    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;}`}</style>
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute()}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute();window.scrollTo(0,0)}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true);saveRoute({t:"auth",m:"signup"})}}/></div>
