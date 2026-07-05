@@ -58,12 +58,12 @@ function ChPage({ch,config,auth,onAuth}){
     </div></div>
     <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
-    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#f8f8f8",borderRadius:12,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ddd"}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #eee",background:"#fff"}}><span style={{fontSize:13,color:"#555"}}>N:{ch.id} {ch.name}</span><X size={20} style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
-      <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#1a1a1a",paddingTop:"56.25%",position:"relative"}}>{!ch.image_url&&<Film size={50} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
-      {ch.description&&<div style={{padding:"12px 16px",fontSize:14,color:"#444",lineHeight:1.6,borderBottom:"1px solid #eee",background:"#fff"}}>{ch.description}</div>}
-      <div style={{background:"#FDE8E8",margin:16,padding:"14px 16px",borderRadius:8,color:R,textAlign:"center",fontSize:14,fontWeight:500,border:"1px solid #fcc"}}>Download link, available after purchases.</div>
-      <div style={{padding:"0 16px 16px",fontSize:14}}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}><div style={{lineHeight:2}}><div><b>Resolution:</b> {ch.resolution||"—"}</div><div><b>Duration:</b> {ch.duration||"—"}</div><div><b>Size:</b> {ch.size||"—"}</div></div><div style={{textAlign:"right"}}><b>Views:</b> {ch.views||0}</div></div></div>
+    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{ch.id} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
+      <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#ccc",paddingTop:"56.25%",position:"relative",borderBottom:"2px solid #c0392b"}}>{!ch.image_url&&<Film size={50} color="#999" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
+      <div style={{padding:"16px 16px 0"}}><div style={{background:"#FDE8E8",padding:"14px 16px",borderRadius:4,color:"#c0392b",textAlign:"center",fontSize:15,fontWeight:500}}>Download link , available after purchases.</div></div>
+      {ch.description&&<div style={{padding:"14px 16px 0",fontSize:15,color:"#333",lineHeight:1.6,borderLeft:"3px solid #ddd",marginLeft:16,marginTop:12,paddingLeft:12}}>{ch.description}</div>}
+      <div style={{padding:"16px 16px 20px",fontSize:16,color:"#1a1a1a"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{lineHeight:2.2}}><div><span style={{fontWeight:800}}>Resolution:</span> {ch.resolution||"—"}</div><div><span style={{fontWeight:800}}>Duration:</span> {ch.duration||"—"}</div><div><span style={{fontWeight:800}}>Size:</span> {ch.size||"—"}</div></div><div><span style={{fontWeight:800}}>Views:</span> {ch.views||0}</div></div></div>
     </div></div>}
   </div>;
 }
@@ -286,11 +286,10 @@ export default function App(){
   },[]);
 
   // Load data + restore pending channel
-  const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id",auth?.token);const f=await api.getOne("site_config","id=eq.1&select=*",auth?.token);setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
+  const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id");const f=await api.getOne("site_config","id=eq.1&select=*");setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
     const r=loadRoute();if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
-    // Count real users
     const u=await api.aGet("profiles","select=id");if(Array.isArray(u))setUserCount(u.length);
-  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[auth?.token]);
+  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[]);
   useEffect(()=>{load()},[load]);
 
   if(!mounted)return null;
