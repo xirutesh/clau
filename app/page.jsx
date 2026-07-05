@@ -35,7 +35,7 @@ function clearAuth(){try{localStorage.removeItem("auth")}catch{}}
 function SiteLogo({size=44}){return<div style={{width:size,height:size,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.7)",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5"><path d="M12 2C9 2 7 5 7 8c0 2 1 3.5 2 4.5C7.5 13.5 4 15 4 18c0 2 3 4 8 4s8-2 8-4c0-3-3.5-4.5-5-5.5 1-1 2-2.5 2-4.5 0-3-2-6-5-6z"/></svg></div>}
 function LI({src,size=40}){return src?<img src={src} alt="" style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:"2px solid rgba(255,255,255,0.7)"}}/>:<SiteLogo size={size}/>}
 function Spin({t}){return<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,gap:8,color:"#888",flexDirection:"column"}}><div style={{width:44,height:44,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>{t&&<span style={{fontSize:13,marginTop:8}}>{t}</span>}<style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>}
-function SC({label,value,sub,change,icon,iconBg}){return<div style={{background:"#fff",borderRadius:12,padding:"18px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:G,fontWeight:700,fontSize:13}}>{label}</div><div style={{fontSize:28,fontWeight:800,color:"#1a1a1a",letterSpacing:-1,marginTop:4}}>{value}</div><div style={{fontSize:12,color:"#999",marginTop:2}}>{sub} {change&&<span style={{color:"#27ae60",fontWeight:700}}>{change}</span>}</div></div><div style={{width:42,height:42,borderRadius:10,border:`2px solid ${iconBg}`,display:"flex",alignItems:"center",justifyContent:"center",color:iconBg}}>{icon}</div></div></div>}
+function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{background:"#fff",borderRadius:12,padding:"18px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:G,fontWeight:700,fontSize:13}}>{label}</div>{ready?<div style={{fontSize:28,fontWeight:800,color:"#1a1a1a",letterSpacing:-1,marginTop:4}}>{value}</div>:null}<div style={{fontSize:12,color:"#999",marginTop:4}}>{sub} {ready&&change?<span style={{color:"#27ae60",fontWeight:700}}>{change}</span>:null}</div></div><div style={{width:42,height:42,borderRadius:10,border:`2px solid ${iconBg}`,display:"flex",alignItems:"center",justifyContent:"center",color:iconBg}}>{icon}</div></div></div>}
 
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#888",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
@@ -140,18 +140,18 @@ function SiteTab({config,sCfg,inp}){
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>⚙️ New Channel Defaults</div>
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>These auto-fill when creating a new channel.</div>
-      <label style={{fontSize:12,color:"#888"}}>Default Category</label><select value={f.default_category} onChange={e=>setF({...f,default_category:e.target.value})} style={inp}>{cats.map(c=><option key={c}>{c}</option>)}</select>
-      <label style={{fontSize:12,color:"#888"}}>Default Resolution</label><select value={f.default_resolution} onChange={e=>setF({...f,default_resolution:e.target.value})} style={inp}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select>
-      <label style={{fontSize:12,color:"#888"}}>Default Price $</label><input type="number" value={f.default_price} onChange={e=>setF({...f,default_price:e.target.value})} style={inp}/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Default Category</label><select value={f.default_category} onChange={e=>setF({...f,default_category:e.target.value})} style={inp}>{cats.map(c=><option key={c}>{c}</option>)}</select>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Default Resolution</label><select value={f.default_resolution} onChange={e=>setF({...f,default_resolution:e.target.value})} style={inp}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Default Price $</label><input type="number" value={f.default_price} onChange={e=>setF({...f,default_price:e.target.value})} style={inp}/>
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🌐 Site</div>
-      <label style={{fontSize:12,color:"#888"}}>Telegram Link</label><input value={f.telegram_link} onChange={e=>setF({...f,telegram_link:e.target.value})} style={inp}/>
-      <label style={{fontSize:12,color:"#888"}}>Global Delivery Link</label><input value={f.global_delivery_link} onChange={e=>setF({...f,global_delivery_link:e.target.value})} style={inp}/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Telegram Link</label><input value={f.telegram_link} onChange={e=>setF({...f,telegram_link:e.target.value})} style={inp}/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Global Delivery Link</label><input value={f.global_delivery_link} onChange={e=>setF({...f,global_delivery_link:e.target.value})} style={inp}/>
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📊 Fake Users</div>
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Videos, Content Size & Views auto-calculate. Users are fake.</div>
-      <label style={{fontSize:12,color:"#888"}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
-      <label style={{fontSize:12,color:"#888"}}>Annual Growth</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+3200"/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Annual Growth</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+3200"/>
     </div>
     <button onClick={save} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:saved?"#27ae60":G,color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer"}}>{saved?"✅ Saved!":"Save Changes"}</button>
   </div>;
@@ -213,17 +213,17 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
         <div style={{display:"flex",gap:8}}><select value={form.resolution} onChange={e=>setForm({...form,resolution:e.target.value})} style={{...inp,flex:1}}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select><input placeholder="Size" value={form.size} onChange={e=>setForm({...form,size:e.target.value})} style={{...inp,flex:1}}/></div>
         <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
         <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
-        <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:4}}>Image:</div>
+        <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Image:</div>
         <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})}/>
         <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
-        <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:6}}>Show in:</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.top_selling} onChange={e=>setForm({...form,top_selling:e.target.checked})}/>Top Selling</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_top_viewed} onChange={e=>setForm({...form,section_top_viewed:e.target.checked})}/>Top Viewed</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
+        <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.top_selling} onChange={e=>setForm({...form,top_selling:e.target.checked})}/>Top Selling</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_top_viewed} onChange={e=>setForm({...form,section_top_viewed:e.target.checked})}/>Top Viewed</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
         <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:eCh?"#27ae60":G}}>{sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm(defF())}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#666",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
       </div>
       <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📦 Bulk Add (multiple products)</div>
         <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>One name per line. Uses defaults (resolution, price) from Site tab.</div>
         <textarea placeholder={"Product Name 1\nProduct Name 2\nProduct Name 3"} value={bulkNames} onChange={e=>setBulkNames(e.target.value)} style={{...inp,minHeight:80,resize:"vertical"}}/>
-        <label style={{fontSize:12,color:"#888"}}>Category for all:</label>
+        <label style={{fontSize:13,color:"#555",fontWeight:600}}>Category for all:</label>
         <select value={bulkCat} onChange={e=>setBulkCat(e.target.value)} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
         <button onClick={bulkAdd} disabled={bulkSav} style={{width:"100%",padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:"#1565C0",opacity:bulkSav?0.7:1}}>{bulkSav?"Adding...":"Add All"}</button>
       </div>
@@ -247,7 +247,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
     {tab==="site"&&<SiteTab config={config} sCfg={sCfg} inp={inp}/>}
 
-    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Videos",v:aVids,c:"#27ae60"},{l:"Content Size",v:aSize,c:"#e67e22"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:12,color:"#888",fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
+    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Videos",v:aVids,c:"#27ae60"},{l:"Content Size",v:aSize,c:"#e67e22"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:13,color:"#555",fontWeight:600,fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
   </div>;
 }
 
@@ -321,13 +321,13 @@ export default function App(){
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true);saveRoute({t:"auth",m:"signup"})}}/></div>
-    :waiting||!ready?<div style={{padding:40,textAlign:"center"}}><Spin/></div>
+    :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/></div></div>
     :<>
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
-        <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0"/>
-        <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0"/>
-        <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B"/>
-        <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0"/>
+        <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0" ready={ready}/>
+        <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0" ready={ready}/>
+        <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
+        <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
 
       {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
