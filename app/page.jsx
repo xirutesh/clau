@@ -53,7 +53,7 @@ function ChPage({ch,config,auth,onAuth}){
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
       <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
-      <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:700,fontSize:16}}>Full Access</div><div style={{color:G,fontSize:14,marginTop:4}}>{ch.name}</div></div>
+      <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:800,fontSize:18,color:"#1a1a1a"}}>Full Access</div><div style={{color:G,fontSize:15,marginTop:4,fontWeight:600}}>{ch.name}</div></div>
       <div style={{padding:"8px 20px 20px"}}><button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button></div>
     </div></div>
     <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
@@ -71,18 +71,18 @@ function ChPage({ch,config,auth,onAuth}){
 // Dropdown Menu
 function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
   const[exp,setExp]=useState({});const scr=useScreen();
+  const mp=scr.desktop?"14px 60px":"14px 20px",sp=scr.desktop?"10px 60px 10px 88px":"10px 20px 10px 48px";
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const grp={};(channels||[]).forEach(c=>{if(!grp[c.category])grp[c.category]=[];grp[c.category].push(c);});Object.keys(grp).forEach(k=>grp[k].sort((a,b)=>(a.name||"").localeCompare(b.name||"")));
   if(!open)return null;
-  const cp={padding:"16px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:12};
   return<div style={{background:G,width:"100%"}}>
-    <div onClick={()=>setExp(p=>({...p,INFO:!p.INFO}))} style={{...cp,color:"#fff",fontWeight:700,fontSize:18}}><Info size={18}/>INFO<span style={{marginLeft:"auto"}}><ChevronDown size={18} style={{transform:exp.INFO?"rotate(180deg)":"none",transition:"transform 0.2s"}}/></span></div>
-    {exp.INFO&&<div style={{borderLeft:"3px solid rgba(255,255,255,0.3)",marginLeft:24}}>{[{k:"telegram",l:"Telegram"},{k:"usc2257",l:"18 USC 2257"},{k:"removal",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:"12px 20px",color:"#fff",fontSize:15,cursor:"pointer",fontWeight:500}}>{i.l}</div>)}</div>}
+    <div onClick={()=>setExp(p=>({...p,INFO:!p.INFO}))} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}><Info size={16}/>INFO<span style={{marginLeft:"auto",color:"#FFD54F"}}>▼</span></div>
+    {exp.INFO&&[{k:"telegram",l:"Telegram"},{k:"usc2257",l:"18 USC 2257"},{k:"removal",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{i.l}</div>)}
     {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];const isG=cat==="GOLD-AREA";const isExp=exp[cat];return<div key={i}>
-      <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{...cp,color:isG?"#C0392B":"#fff",fontWeight:700,fontSize:18,background:isExp?"rgba(0,0,0,0.08)":"transparent"}}><Video size={18}/>{cat}{items.length>0&&<span style={{marginLeft:"auto"}}><ChevronDown size={18} style={{transform:isExp?"rotate(180deg)":"none",transition:"transform 0.2s"}}/></span>}</div>
-      {isExp&&<div style={{borderLeft:"3px solid rgba(255,255,255,0.3)",marginLeft:24,background:"rgba(0,0,0,0.05)"}}>{items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:"12px 20px",color:"#fff",fontSize:15,cursor:"pointer",fontWeight:500,borderBottom:"1px solid rgba(255,255,255,0.08)"}}>{ch.name}</div>)}</div>}
+      <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?R:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10,background:isExp?"rgba(0,0,0,0.08)":"transparent"}}><Film size={16}/>{cat}{items.length>0&&<span style={{marginLeft:"auto",color:isG?R:"#FFD54F"}}>▼</span>}</div>
+      {isExp&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer",borderLeft:"3px solid rgba(255,255,255,0.3)"}}>{ch.name}</div>)}
     </div>})}
-    <div style={{borderTop:"2px solid rgba(255,255,255,0.2)",marginTop:4}}>{auth?<>{isAdmin&&<div onClick={onAdmin} style={{...cp,color:"#fff",fontWeight:700,fontSize:18}}><Settings size={18}/>Admin Panel</div>}<div style={{padding:"16px 24px",color:"#fff",fontWeight:600,fontSize:15,display:"flex",alignItems:"center",justifyContent:"space-between"}}><span>Welcome : {auth.username||"user"}</span><span onClick={onLogout} style={{color:"#ffcccc",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:15,fontWeight:700}}><LogOut size={16}/>LogOut</span></div></>:<div onClick={onAdmin} style={{...cp,color:"#fff",fontWeight:700,fontSize:18}}><LogIn size={18}/>LogIn</div>}</div>
+    <div style={{borderTop:"1px solid rgba(255,255,255,0.15)",marginTop:4}}>{auth?<>{isAdmin&&<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Settings size={16}/>Admin Panel</div>}<div style={{padding:mp,color:"#fff",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}><span>Welcome : {auth.username||"user"}</span><span onClick={onLogout} style={{color:"#ffcccc",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:14}}><LogOut size={14}/>LogOut</span></div></>:<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><LogIn size={16}/>LogIn</div>}</div>
   </div>;
 }
 
