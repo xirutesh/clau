@@ -58,12 +58,12 @@ function ChPage({ch,config,auth,onAuth}){
     </div></div>
     <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
-    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:12,width:"100%",maxWidth:500,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #eee"}}><span style={{fontSize:13,color:"#555"}}>N:{ch.id} {ch.name}</span><X size={20} style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
+    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#f8f8f8",borderRadius:12,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ddd"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #eee",background:"#fff"}}><span style={{fontSize:13,color:"#555"}}>N:{ch.id} {ch.name}</span><X size={20} style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
       <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#1a1a1a",paddingTop:"56.25%",position:"relative"}}>{!ch.image_url&&<Film size={50} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
-      {ch.description&&<div style={{padding:"12px 16px",fontSize:14,color:"#444",lineHeight:1.6,borderBottom:"1px solid #eee"}}>{ch.description}</div>}
-      <div style={{background:"#FDE8E8",margin:16,padding:"12px 16px",borderRadius:8,color:R,textAlign:"center",fontSize:14}}>Download link, available after purchases.</div>
-      <div style={{padding:"0 16px 16px",fontSize:14}}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><b>Resolution:</b> {ch.resolution}</div><div><b>Views:</b> {ch.views}</div></div><div style={{marginTop:4}}><b>Size:</b> {ch.size}</div></div>
+      {ch.description&&<div style={{padding:"12px 16px",fontSize:14,color:"#444",lineHeight:1.6,borderBottom:"1px solid #eee",background:"#fff"}}>{ch.description}</div>}
+      <div style={{background:"#FDE8E8",margin:16,padding:"14px 16px",borderRadius:8,color:R,textAlign:"center",fontSize:14,fontWeight:500,border:"1px solid #fcc"}}>Download link, available after purchases.</div>
+      <div style={{padding:"0 16px 16px",fontSize:14}}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}><div style={{lineHeight:2}}><div><b>Resolution:</b> {ch.resolution||"—"}</div><div><b>Duration:</b> {ch.duration||"—"}</div><div><b>Size:</b> {ch.size||"—"}</div></div><div style={{textAlign:"right"}}><b>Views:</b> {ch.views||0}</div></div></div>
     </div></div>}
   </div>;
 }
@@ -164,13 +164,13 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
-  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
+  const cats=Array.isArray(config?.categories)?config.categories:defCats;
+  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
   const[users,setUsers]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,marginBottom:8,boxSizing:"border-box"};
-  const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const rawH=Array.isArray(config?.sections)?config.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
   const homeSecs=[eS("top-selling","Top Selling Section of the Month"),eS("top-viewed","Top Viewed Videos of the Month"),eS("latest","Latest Updates")];
@@ -179,7 +179,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
   const saveCh=async()=>{if(!form.name)return;setSav(true);
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
-    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:form.image_url||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:form.image_url||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
     if(eCh){const ok=await api.aPatch("channels",`id=eq.${eCh.id}`,data);if(!ok){notify("Save failed","err");setSav(false);return;}setECh(null);notify("✅ Channel saved");}else{const r=await api.aPost("channels",data);if(!r||r.message){notify("Add failed: "+(r?.message||"Error"),"err");setSav(false);return;}notify("✅ Channel added");}
     setForm(defF());await reload();setSav(false);};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
@@ -187,7 +187,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
-  const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
+  const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
   const allS=channels.length>0&&sel.size===channels.length;
 
   // Auto stats
@@ -211,6 +211,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
         <textarea placeholder="Description (shown when user clicks the product)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{...inp,minHeight:50,resize:"vertical"}}/>
         <div style={{display:"flex",gap:8}}><input placeholder="Price $" type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} style={{...inp,flex:1}}/><input placeholder="Total Count" type="number" value={form.video_count} onChange={e=>setForm({...form,video_count:e.target.value})} style={{...inp,flex:1}}/></div>
         <div style={{display:"flex",gap:8}}><select value={form.resolution} onChange={e=>setForm({...form,resolution:e.target.value})} style={{...inp,flex:1}}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select><input placeholder="Size" value={form.size} onChange={e=>setForm({...form,size:e.target.value})} style={{...inp,flex:1}}/></div>
+        <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
         <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
         <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:4}}>Image:</div>
         <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})}/>
