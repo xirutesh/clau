@@ -326,7 +326,7 @@ export default function App(){
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
         <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0" ready={ready}/>
         <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0" ready={ready}/>
-        <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
+        <SC label="Views" value={aViews||0} sub="Total views" icon={!ready?<div style={{width:20,height:20,border:"3px solid #f0f0f0",borderTop:`3px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>:<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
         <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
 
