@@ -32,7 +32,7 @@ function clearAuth(){try{localStorage.removeItem("auth")}catch{}}
 // Components
 function SiteLogo({size=44}){return<div style={{width:size,height:size,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.7)",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5"><path d="M12 2C9 2 7 5 7 8c0 2 1 3.5 2 4.5C7.5 13.5 4 15 4 18c0 2 3 4 8 4s8-2 8-4c0-3-3.5-4.5-5-5.5 1-1 2-2.5 2-4.5 0-3-2-6-5-6z"/></svg></div>}
 function LI({src,size=40}){return src?<img src={src} alt="" style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:"2px solid rgba(255,255,255,0.7)"}}/>:<SiteLogo size={size}/>}
-function Spin({t}){return<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:40,gap:8,color:"#888"}}><Loader2 size={20} style={{animation:"spin 1s linear infinite"}}/>{t}<style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>}
+function Spin({t}){return<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,gap:8,color:"#888",flexDirection:"column"}}><div style={{width:44,height:44,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>{t&&<span style={{fontSize:13,marginTop:8}}>{t}</span>}<style>{`@keyframes spin{to{transform:rotate(360deg)}}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}div[style*="background"]{-webkit-touch-callout:none;user-select:none;}`}</style></div>}
 function SC({label,value,sub,change,icon,iconBg}){return<div style={{background:"#fff",borderRadius:12,padding:"18px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:G,fontWeight:700,fontSize:13}}>{label}</div><div style={{fontSize:28,fontWeight:800,color:"#1a1a1a",letterSpacing:-1,marginTop:4}}>{value}</div><div style={{fontSize:12,color:"#999",marginTop:2}}>{sub} {change&&<span style={{color:"#27ae60",fontWeight:700}}>{change}</span>}</div></div><div style={{width:42,height:42,borderRadius:10,border:`2px solid ${iconBg}`,display:"flex",alignItems:"center",justifyContent:"center",color:iconBg}}>{icon}</div></div></div>}
 
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#888",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
@@ -125,9 +125,9 @@ function Auth({onLogin,onBack,defaultMode}){
 // Site Settings Tab (with Save button)
 function SiteTab({config,sCfg,inp}){
   const cats=Array.isArray(config?.categories)?config.categories.filter(c=>c!=="INFO"):["Action"];
-  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P"});
+  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50});
   const[saved,setSaved]=useState(false);
-  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution});setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
   return<div style={{padding:16}}>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🖼️ Site Logo</div>
       <ImgUp value={f.logo_url} onChange={v=>setF({...f,logo_url:v})}/>
@@ -137,6 +137,7 @@ function SiteTab({config,sCfg,inp}){
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>These auto-fill when creating a new channel.</div>
       <label style={{fontSize:12,color:"#888"}}>Default Category</label><select value={f.default_category} onChange={e=>setF({...f,default_category:e.target.value})} style={inp}>{cats.map(c=><option key={c}>{c}</option>)}</select>
       <label style={{fontSize:12,color:"#888"}}>Default Resolution</label><select value={f.default_resolution} onChange={e=>setF({...f,default_resolution:e.target.value})} style={inp}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select>
+      <label style={{fontSize:12,color:"#888"}}>Default Price $</label><input type="number" value={f.default_price} onChange={e=>setF({...f,default_price:e.target.value})} style={inp}/>
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🌐 Site</div>
       <label style={{fontSize:12,color:"#888"}}>Telegram Link</label><input value={f.telegram_link} onChange={e=>setF({...f,telegram_link:e.target.value})} style={inp}/>
@@ -154,10 +155,11 @@ function SiteTab({config,sCfg,inp}){
 // Admin Panel
 function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
-  const defF=()=>({name:"",price:"",video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
+  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
   const[users,setUsers]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
+  const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,marginBottom:8,boxSizing:"border-box"};
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const rawH=Array.isArray(config?.sections)?config.sections:[];
@@ -172,7 +174,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     if(eCh){const ok=await api.patch("channels",`id=eq.${eCh.id}`,data,auth.token);if(!ok){alert("Save failed. Run the SQL for missing columns.");setSav(false);return;}setECh(null);}else{const r=await api.post("channels",data,auth.token);if(!r||r.message){alert("Add failed: "+(r?.message||"Check columns."));setSav(false);return;}}
     setForm(defF());await reload();setSav(false);};
   const delSel=async()=>{setSav(true);await api.del("channels",`id=in.(${[...sel].join(",")})`,auth.token);setSel(new Set());setCDel(false);await reload();setSav(false);};
-  const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.patch("site_config","id=eq.1",u,auth.token);};
+  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.post("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv},auth.token);}setBulkNames("");await reload();setBulkSav(false);};
+  const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));alert(`Delivered to ${u.username||"user"}`);}};
   const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
@@ -205,6 +208,13 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
         <div style={{fontSize:12,color:"#888",fontWeight:600,marginBottom:6}}>Show in:</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.top_selling} onChange={e=>setForm({...form,top_selling:e.target.checked})}/>Top Selling</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_top_viewed} onChange={e=>setForm({...form,section_top_viewed:e.target.checked})}/>Top Viewed</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,cursor:"pointer"}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
         <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:eCh?"#27ae60":G}}>{sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm(defF())}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#666",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
+      </div>
+      <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📦 Bulk Add (multiple products)</div>
+        <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>One name per line. Uses defaults (resolution, price) from Site tab.</div>
+        <textarea placeholder={"Product Name 1\nProduct Name 2\nProduct Name 3"} value={bulkNames} onChange={e=>setBulkNames(e.target.value)} style={{...inp,minHeight:80,resize:"vertical"}}/>
+        <label style={{fontSize:12,color:"#888"}}>Category for all:</label>
+        <select value={bulkCat} onChange={e=>setBulkCat(e.target.value)} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
+        <button onClick={bulkAdd} disabled={bulkSav} style={{width:"100%",padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:"#1565C0",opacity:bulkSav?0.7:1}}>{bulkSav?"Adding...":"Add All"}</button>
       </div>
       <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={allS} onChange={()=>setSel(allS?new Set():new Set(channels.map(c=>c.id)))} style={{width:18,height:18}}/>{allS?"Deselect":"Select"} All ({channels.length})</label>{sel.size>0&&(!cDel?<button onClick={()=>setCDel(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>Delete ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delSel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm</button><button onClick={()=>setCDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#666",cursor:"pointer",fontSize:11}}>No</button></div>)}</div>
       {channels.map(ch=><div key={ch.id} style={{background:sel.has(ch.id)?"#FFF8E1":"#fff",borderRadius:10,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,border:sel.has(ch.id)?`2px solid ${G}`:"2px solid transparent"}}><input type="checkbox" checked={sel.has(ch.id)} onChange={()=>{const n=new Set(sel);n.has(ch.id)?n.delete(ch.id):n.add(ch.id);setSel(n)}} style={{width:18,height:18}}/>{ch.image_url&&<img src={ch.image_url} alt="" style={{width:50,height:28,objectFit:"cover",borderRadius:4}}/>}<div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14}}>{ch.name} {ch.top_selling&&<span style={{fontSize:10,background:"#FFF3E0",color:"#E65100",padding:"2px 6px",borderRadius:4}}>TOP</span>} {ch.section_top_viewed&&<span style={{fontSize:10,background:"#E3F2FD",color:"#1565C0",padding:"2px 6px",borderRadius:4}}>VIEWED</span>} {ch.section_latest&&<span style={{fontSize:10,background:"#E8F5E9",color:"#2E7D32",padding:"2px 6px",borderRadius:4}}>LATEST</span>}</div><div style={{fontSize:11,color:"#888",marginTop:2}}>{ch.category} · ${ch.price} · {ch.video_count} · {ch.resolution||"—"} · 👁 {ch.views||0}</div></div><button onClick={()=>startE(ch)} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div>)}
@@ -243,33 +253,43 @@ export default function App(){
   const[mounted,setMounted]=useState(false);const[ready,setReady]=useState(false);
   const scr=useScreen();const isA=auth?.role==="admin";
   const[pendCh,setPendCh]=useState(null);
+  const[userCount,setUserCount]=useState(0);
 
-  const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch)saveRoute({t:"ch",id:ch.id});else clearRoute();};
+  const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){saveRoute({t:"ch",id:ch.id});
+    // Auto-increment views
+    api.patch("channels",`id=eq.${ch.id}`,{views:(ch.views||0)+1},auth?.token).then(()=>{setChs(prev=>prev.map(c=>c.id===ch.id?{...c,views:(c.views||0)+1}:c));});
+  }else clearRoute();};
   const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p)saveRoute({t:"info",p});else clearRoute();};
   const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();};
+  const openAdmin=()=>{setSAd(true);saveRoute({t:"admin"});};
+  const closeAdmin=()=>{setSAd(false);clearRoute();load();};
 
   // Mount: restore auth + route from localStorage (sync, no hydration issues)
   useEffect(()=>{
-    const s=loadAuth();if(s){setAuth(s);setSAd(false);setSA(false);}
+    const s=loadAuth();if(s){setAuth(s);setSA(false);}
     const r=loadRoute();
     if(r&&r.t==="info")setIP(r.p);
     else if(r&&r.t==="ch")setPendCh(r.id);
+    else if(r&&r.t==="admin"&&s?.role==="admin")setSAd(true);
     setMounted(true);
   },[]);
 
   // Load data + restore pending channel
   const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id",auth?.token);const f=await api.getOne("site_config","id=eq.1&select=*",auth?.token);setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
     const r=loadRoute();if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
+    // Count real users
+    const u=await api.aGet("profiles","select=id");if(Array.isArray(u))setUserCount(u.length);
   }catch{setChs([]);setCfg(defCfg);}setReady(true)},[auth?.token]);
   useEffect(()=>{load()},[load]);
 
   if(!mounted)return null;
 
-  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={()=>{setSAd(false);load()}} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false)}}/>;
+  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);clearRoute();}}/>;
   if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false)}} onBack={()=>setSA(false)}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
   const waiting=pendCh!==null&&!sCh;
+  const loading=!ready&&!waiting;
 
   const rawH=Array.isArray(cfg.sections)?cfg.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
@@ -279,30 +299,30 @@ export default function App(){
   const aViews=chs.reduce((a,c)=>a+(c.views||0),0);
   const aSMB=chs.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
   const aS=aSMB>1024?`${(aSMB/1024).toFixed(2)}GB`:`${aSMB.toFixed(0)}MB`;
-  const fU=cfg.fake_users||12840;const fUA=cfg.fake_users_annual||"+3200";
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
-  return<div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
+  return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
+    <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?setSAd(true):(setAM("login"),setSA(true))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false)}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute()}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true)}}/></div>
-    :waiting?<div style={{padding:40,textAlign:"center"}}><Spin t=""/></div>
+    :waiting||!ready?<div style={{padding:40,textAlign:"center"}}><Spin/></div>
     :<>
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
         <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0"/>
         <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0"/>
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B"/>
-        <SC label="Users" value={fU} sub="new Users (annual)" change={fUA} icon={<Star size={20}/>} iconBg="#F5D6A0"/>
+        <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0"/>
       </div>
 
-      {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
+      {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
 
-      {tV.visible!==false&&chs.filter(c=>c.section_top_viewed).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tV.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_top_viewed).map(ch=><VT key={`tv-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div><div style={{height:3,background:G}}/></>}
+      {tV.visible!==false&&chs.filter(c=>c.section_top_viewed).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tV.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_top_viewed).map(ch=><VT key={`tv-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div><div style={{height:3,background:G}}/></>}
 
-      {la.visible!==false&&chs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
+      {la.visible!==false&&chs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
 
       <div style={{background:G,padding:"20px 16px",textAlign:"center",color:"#fff",fontSize:12}}>© 2026 XIRUTE.COM — All Rights Reserved</div>
     </>}
