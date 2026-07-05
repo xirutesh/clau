@@ -98,7 +98,7 @@ function InfoP({page,config}){
 function Auth({onLogin,onBack,defaultMode}){
   const[mode,setMode]=useState(defaultMode||"login");const[user,setUser]=useState("");const[pass,setPass]=useState("");const[pass2,setPass2]=useState("");const[err,setErr]=useState("");const[busy,setBusy]=useState(false);
   const[ok,setOk]=useState("");
-  const inp={width:"100%",padding:"12px 14px",borderRadius:4,border:"1px solid #ccc",fontSize:15,marginBottom:10,boxSizing:"border-box",outline:"none"};
+  const inp={width:"100%",padding:"12px 14px",borderRadius:4,border:"2px solid #aaa",fontSize:15,marginBottom:10,boxSizing:"border-box",outline:"none",color:"#333",background:"#fff"};
   const fakeEmail=u=>`${u.toLowerCase().replace(/[^a-z0-9_.-]/g,"")}@siteusers.com`;
   const go=async()=>{if(!user||!pass)return setErr("Fill in all fields");if(mode==="signup"&&pass.length<6)return setErr("Min 6 characters");if(mode==="signup"&&pass!==pass2)return setErr("Passwords don't match");const email=fakeEmail(user);setBusy(true);setErr("");setOk("");
     if(mode==="signup"){const r=await fetch(`${SB_URL}/auth/v1/signup`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass,data:{username:user}})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){const m=d.error_description||d.msg||d.message||"Failed";const ms=String(m).toLowerCase();if(ms.includes("already")||ms.includes("email")||ms.includes("exists"))setErr("Username already taken.");else if(ms.includes("password"))setErr("Password too weak. Min 6 characters.");else setErr("Could not create account. Try a different username.");setBusy(false);return;}if(d.identities?.length===0){setErr("Username already taken.");setBusy(false);return;}
@@ -170,7 +170,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
   const[users,setUsers]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
-  const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,marginBottom:8,boxSizing:"border-box"};
+  const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
   const rawH=Array.isArray(config?.sections)?config.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
   const homeSecs=[eS("top-selling","Top Selling Section of the Month"),eS("top-viewed","Top Viewed Videos of the Month"),eS("latest","Latest Updates")];
@@ -282,6 +282,7 @@ export default function App(){
     if(r&&r.t==="info")setIP(r.p);
     else if(r&&r.t==="ch")setPendCh(r.id);
     else if(r&&r.t==="admin"&&s?.role==="admin")setSAd(true);
+    else if(r&&r.t==="auth"&&!s){setAM(r.m||"login");setSA(true);}
     setMounted(true);
   },[]);
 
@@ -289,13 +290,13 @@ export default function App(){
   const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id");const f=await api.getOne("site_config","id=eq.1&select=*");setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
     const r=loadRoute();if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
     const u=await api.aGet("profiles","select=id");if(Array.isArray(u))setUserCount(u.length);
-  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[]);
+  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[auth?.token]);
   useEffect(()=>{load()},[load]);
 
   if(!mounted)return null;
 
   if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);clearRoute();}}/>;
-  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false)}} onBack={()=>setSA(false)}/>;
+  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false);clearRoute()}} onBack={()=>{setSA(false);clearRoute()}}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
   const waiting=pendCh!==null&&!sCh;
@@ -312,14 +313,14 @@ export default function App(){
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
   return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
-    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;}`}</style>
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute()}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute()}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
-    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true)}}/></div>
+    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true);saveRoute({t:"auth",m:"signup"})}}/></div>
     :waiting||!ready?<div style={{padding:40,textAlign:"center"}}><Spin/></div>
     :<>
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
