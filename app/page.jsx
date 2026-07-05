@@ -275,7 +275,7 @@ export default function App(){
   const fU=cfg.fake_users||12840;const fUA=cfg.fake_users_annual||"+3200";
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
-  return<div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2",minHeight:"100vh"}}>
+  return<div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
     <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?setSAd(true):(setAM("login"),setSA(true))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false)}} onInfo={p=>navInfo(p)}/>
