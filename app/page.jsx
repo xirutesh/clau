@@ -335,7 +335,7 @@ export default function App(){
 
   if(!mounted)return null;
 
-  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);clearRoute();}}/>;
+  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);setAM("login");setSA(true);saveRoute({t:"auth",m:"login"});}}/>;
   if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false);clearRoute();window.scrollTo(0,0)}} onBack={()=>{setSA(false);clearRoute();window.scrollTo(0,0)}}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
@@ -357,7 +357,7 @@ export default function App(){
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);clearRoute();window.scrollTo(0,0)}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);setAM("login");setSA(true);saveRoute({t:"auth",m:"login"});window.scrollTo(0,0)}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true);saveRoute({t:"auth",m:"signup"})}}/></div>
