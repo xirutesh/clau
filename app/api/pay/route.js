@@ -8,6 +8,7 @@ const SB_ANON =
   process.env.SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
 const NOWPAY = process.env.NOWPAYMENTS_API_KEY;
+const SITE_URL = process.env.SITE_URL || "https://clau-five.vercel.app";
 
 export async function POST(request) {
   if (!NOWPAY) {
@@ -49,6 +50,7 @@ export async function POST(request) {
       price_currency: "usd",
       order_id: `ch_${ch.id}_${Date.now()}`,
       order_description: `Order #${ch.id}`,
+      ipn_callback_url: `${SITE_URL}/api/nowpayments/ipn`,
     }),
   });
   const d = await inv.json().catch(() => null);
