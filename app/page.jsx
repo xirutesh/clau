@@ -64,21 +64,23 @@ function ImgUp({value,onChange}){
 }
 
 // Channel Page
-function ChPage({ch,config,auth,onAuth}){
+function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
   const[gc,setGc]=useState(false);const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
+  const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
-  const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
+  const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
       <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
       <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:800,fontSize:18,color:"#1a1a1a"}}>Full Access</div><div style={{color:G,fontSize:15,marginTop:4,fontWeight:600}}>{ch.name}</div></div>
       <div style={{padding:"8px 20px 20px"}}>
         <button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button>
-        {!gc&&!done&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
-        {gc&&!done&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
+        {!gc&&!inProc&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
+        {gc&&!inProc&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
           <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:6}}>Pay with Gift Card</div>
-          <div style={{fontSize:12,color:"#666",marginBottom:10}}>Enter the gift card code and upload a photo of the card. We&apos;ll review it and confirm your access.</div>
+          <div style={{fontSize:13,color:"#4A148C",fontWeight:600,background:"#EDE1F5",borderRadius:8,padding:"8px 10px",marginBottom:10}}>⚠️ The gift card must be <b>Binance</b> or <b>Rewarble Global</b>. Other gift cards are not accepted.</div>
+          <div style={{fontSize:12,color:"#666",marginBottom:10}}>Enter the code and upload a clear photo of the card. We&apos;ll review it and confirm your access.</div>
           <input placeholder="Gift card code" value={code} onChange={e=>setCode(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #bbb",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"}}/>
           <ImgUp value={proof} onChange={setProof}/>
           <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -86,7 +88,7 @@ function ChPage({ch,config,auth,onAuth}){
             <button onClick={()=>{setGc(false);setCode("");setProof("")}} style={{padding:"12px 16px",borderRadius:8,border:"1px solid #ccc",background:"#fff",color:"#555",fontWeight:700,cursor:"pointer"}}>Cancel</button>
           </div>
         </div>}
-        {done&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#E8F5E9",border:"1px solid #A5D6A7",textAlign:"center",color:"#2E7D32",fontWeight:600,fontSize:14}}>✅ Submitted! We&apos;ll review your payment and confirm your access shortly.</div>}
+        {inProc&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#FFF3E0",border:"1px solid #FFCC80",textAlign:"center",color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       </div>
     </div></div>
     <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
@@ -321,6 +323,7 @@ export default function App(){
   const scr=useScreen();const isA=auth?.role==="admin";
   const[pendCh,setPendCh]=useState(null);
   const[userCount,setUserCount]=useState(0);
+  const[mySubs,setMySubs]=useState([]);
 
   const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){saveRoute({t:"ch",id:ch.id});window.history.replaceState(null,"","#"+dId(ch.id));
     api.aPatch("channels",`id=eq.${ch.id}`,{views:(ch.views||0)+1}).then(()=>{setChs(prev=>prev.map(c=>c.id===ch.id?{...c,views:(c.views||0)+1}:c));});
@@ -374,7 +377,17 @@ export default function App(){
   }catch{setChs([]);setCfg(defCfg);}setReady(true)},[]);
   useEffect(()=>{load()},[load]);
 
-  if(!mounted)return null;
+  // Load the user's own Gift Card submissions (to show "in process" status)
+  const refreshMySubs=useCallback(()=>{const tk=loadAuth()?.token;if(!tk){setMySubs([]);return;}fetch("/api/gift",{headers:{"Authorization":`Bearer ${tk}`}}).then(r=>r.ok?r.json():[]).then(d=>{setMySubs(Array.isArray(d)?d:[])}).catch(()=>{})},[]);
+  useEffect(()=>{refreshMySubs()},[auth,refreshMySubs]);
+
+  const hasPending=mySubs.some(s=>s.status==="pending");
+
+  if(!mounted)return<div style={{minHeight:"100dvh",background:"#f2f2f2",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}><LI src={null} size={40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:10}}>For All Your Pleasures</div></div></div>
+    <div style={{display:"flex",justifyContent:"center",padding:"90px 0"}}><div style={{width:46,height:46,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/></div>
+  </div>;
 
   if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();openAuth("login");}}/>;
   if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSAd(false);closeAuth()}} onBack={()=>closeAuth()}/>;
@@ -401,9 +414,10 @@ export default function App(){
     <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
-    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")}/></div>
+    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")} pendingSub={mySubs.some(s=>String(s.channel_id)===String(sCh.id)&&s.status==="pending")} onSubmitted={refreshMySubs}/></div>
     :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/></div></div>
     :<>
+      {hasPending&&<div style={{margin:pad,padding:"12px 16px",background:"#FFF3E0",border:"1px solid #FFCC80",borderRadius:10,color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
         <SC label="Video" value={aVids||0} sub="new Videos (annual)" change={`+${aVids}`} icon={<Play size={20}/>} iconBg="#F5D6A0" ready={ready}/>
         <SC label="Content Size" value={aS} sub="All video size" icon={<HardDrive size={20}/>} iconBg="#F5D6A0" ready={ready}/>

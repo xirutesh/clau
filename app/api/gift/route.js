@@ -59,6 +59,20 @@ async function notifyTelegram({ photo, caption }) {
   } catch {}
 }
 
+// Returns the logged-in user's own submissions (channel_id + status) so the UI
+// can show "in process" on the home and on the products they submitted for.
+export async function GET(request) {
+  if (!SB_SVC) return Response.json([]);
+  const user = await verifyUser(request);
+  if (!user) return Response.json([]); // not logged in -> empty, not an error
+  const r = await fetch(
+    `${SB_URL}/rest/v1/gift_submissions?user_id=eq.${user.id}&select=channel_id,status&order=created_at.desc`,
+    { headers: svcHeaders() }
+  );
+  const rows = await r.json().catch(() => []);
+  return Response.json(Array.isArray(rows) ? rows : []);
+}
+
 export async function POST(request) {
   if (!SB_SVC) {
     return Response.json({ error: "Server misconfigured: SUPABASE_SERVICE_ROLE_KEY is not set" }, { status: 500 });
