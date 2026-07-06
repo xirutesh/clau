@@ -12,7 +12,9 @@ const SB_ANON =
   process.env.SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
 const SB_SVC = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Notifications bot (in the owner group). Payments bot (the one the buyer interacts with).
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const STARS_TOKEN = process.env.TELEGRAM_STARS_BOT_TOKEN || TG_TOKEN;
 const TG_CHAT = process.env.TELEGRAM_CHAT_ID; // owner group (for notifications)
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 
@@ -22,12 +24,16 @@ function svcHeaders(extra) {
 function anonHeaders() {
   return { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` };
 }
-function tg(method, body) {
-  return fetch(`https://api.telegram.org/bot${TG_TOKEN}/${method}`, {
+function tgWith(token, method, body) {
+  return fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+// The Stars/payments bot talks to the buyer (invoice, pre-checkout, delivery).
+function tg(method, body) {
+  return tgWith(STARS_TOKEN, method, body);
 }
 
 // payload = "<channelId>_<userId>" (userId may be empty)
@@ -126,9 +132,9 @@ async function handleSuccess(msg) {
     }).catch(() => {});
   }
 
-  // Notify the owner group
-  if (TG_CHAT) {
-    await tg("sendMessage", {
+  // Notify the owner group — with the notifications bot (the one that's in the group).
+  if (TG_CHAT && TG_TOKEN) {
+    await tgWith(TG_TOKEN, "sendMessage", {
       chat_id: TG_CHAT,
       text:
         `⭐ Telegram Stars payment\n\n` +
@@ -144,7 +150,7 @@ export async function POST(request) {
     const got = request.headers.get("x-telegram-bot-api-secret-token");
     if (got !== WEBHOOK_SECRET) return new Response("forbidden", { status: 403 });
   }
-  if (!TG_TOKEN) return Response.json({ ok: true });
+  if (!STARS_TOKEN) return Response.json({ ok: true });
 
   let update;
   try {

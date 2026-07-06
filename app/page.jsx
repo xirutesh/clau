@@ -69,7 +69,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[gc,setGc]=useState(false);const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
-  const openStars=()=>{if(!auth){onAuth();return;}const uid=auth?.user?.id||"";window.open(`https://t.me/godyhyvssbot?start=${ch.id}_${uid}`,"_blank");};
+  const openStars=()=>{if(!auth){onAuth();return;}const uid=auth?.user?.id||"";window.open(`https://t.me/hgfrdofldebot?start=${ch.id}_${uid}`,"_blank");};
   const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
