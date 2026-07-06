@@ -46,11 +46,14 @@ export async function POST(request) {
     if (!ok) return new Response("bad signature", { status: 401 });
   }
 
+  // Solo pagos DE ESTE sitio (order_id "ch_..."). La cuenta NOWPayments es
+  // compartida con otro sitio; esto evita avisar aquí por ventas del otro.
+  const isOurs = String(data.order_id || "").startsWith("ch_");
   // Notificar solo cuando el pago está realmente cobrado.
   const status = String(data.payment_status || "");
-  if (status === "finished" || status === "confirmed" || status === "partially_paid") {
+  if (isOurs && (status === "finished" || status === "confirmed" || status === "partially_paid")) {
     await notify(
-      `💰 New crypto sale!\n\n` +
+      `💰 XIRUTE — New crypto sale!\n\n` +
       `${data.order_description || data.order_id || ""}\n` +
       `Amount: $${data.price_amount} ${String(data.price_currency || "").toUpperCase()}\n` +
       `Paid: ${data.actually_paid || data.pay_amount} ${String(data.pay_currency || "").toUpperCase()}\n` +
