@@ -32,6 +32,14 @@ async function verifyUser(request) {
 }
 
 // Fire-and-forget: never let a Telegram failure break the submission.
+async function sendMessage(text) {
+  await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: TG_CHAT, text }),
+  });
+}
+
 async function notifyTelegram({ photo, caption }) {
   if (!TG_TOKEN || !TG_CHAT) return; // not configured yet
   try {
@@ -41,13 +49,12 @@ async function notifyTelegram({ photo, caption }) {
       form.append("chat_id", TG_CHAT);
       form.append("caption", caption);
       form.append("photo", new Blob([bytes]), "proof.jpg");
-      await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendPhoto`, { method: "POST", body: form });
+      const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendPhoto`, { method: "POST", body: form });
+      if (r.ok) return;
+      // Telegram rejected the image (e.g. IMAGE_PROCESS_FAILED) -> at least send the text.
+      await sendMessage(caption + "\n\n⚠️ Couldn't attach the photo — open the admin panel (Payments) to see it.");
     } else {
-      await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: TG_CHAT, text: caption }),
-      });
+      await sendMessage(caption);
     }
   } catch {}
 }
