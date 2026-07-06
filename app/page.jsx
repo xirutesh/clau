@@ -10,7 +10,7 @@ const G="#E5A816",R="#C0392B",PK="#F06292";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
-const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:12840,fake_users_annual:"+3200"};
+const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:12840,fake_users_annual:"+3200",stars_per_usd:50};
 
 function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
 
@@ -69,6 +69,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[gc,setGc]=useState(false);const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
+  const openStars=()=>{if(!auth){onAuth();return;}const uid=auth?.user?.id||"";window.open(`https://t.me/godyhyvssbot?start=${ch.id}_${uid}`,"_blank");};
   const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
@@ -76,6 +77,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
       <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:800,fontSize:18,color:"#1a1a1a"}}>Full Access</div><div style={{color:G,fontSize:15,marginTop:4,fontWeight:600}}>{ch.name}</div></div>
       <div style={{padding:"8px 20px 20px"}}>
         <button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button>
+        {!inProc&&<button onClick={openStars} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#2AABEE,#229ED9)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Send size={18}/>Telegram Stars</button>}
         {!gc&&!inProc&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
         {gc&&!inProc&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
           <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:6}}>Pay with Gift Card</div>
@@ -173,9 +175,9 @@ function Auth({onLogin,onBack,defaultMode}){
 // Site Settings Tab (with Save button)
 function SiteTab({config,sCfg,inp}){
   const cats=Array.isArray(config?.categories)?config.categories.filter(c=>c!=="INFO"):["Action"];
-  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50});
+  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50,stars_per_usd:config?.stars_per_usd||50});
   const[saved,setSaved]=useState(false);
-  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50,stars_per_usd:Number(f.stars_per_usd)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
   return<div style={{padding:16}}>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🖼️ Site Logo</div>
       <ImgUp value={f.logo_url} onChange={v=>setF({...f,logo_url:v})}/>
@@ -190,6 +192,8 @@ function SiteTab({config,sCfg,inp}){
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🌐 Site</div>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Telegram Link</label><input value={f.telegram_link} onChange={e=>setF({...f,telegram_link:e.target.value})} style={inp}/>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Global Delivery Link</label><input value={f.global_delivery_link} onChange={e=>setF({...f,global_delivery_link:e.target.value})} style={inp}/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Telegram Stars per $1 (rate)</label><input type="number" value={f.stars_per_usd} onChange={e=>setF({...f,stars_per_usd:e.target.value})} style={inp}/>
+      <div style={{fontSize:11,color:"#888",marginTop:-4,marginBottom:4}}>Ex: 50 → a $30 channel costs 1500 Stars</div>
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📊 Fake Users</div>
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Videos, Content Size & Views auto-calculate. Users are fake.</div>
