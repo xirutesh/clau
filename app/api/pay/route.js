@@ -48,7 +48,7 @@ export async function POST(request) {
       price_amount: ch.price,
       price_currency: "usd",
       order_id: `ch_${ch.id}_${Date.now()}`,
-      order_description: `${ch.name} - 1 Month`,
+      order_description: `Order #${ch.id}`,
     }),
   });
   const d = await inv.json().catch(() => null);
