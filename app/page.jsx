@@ -79,8 +79,15 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         {!gc&&!inProc&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
         {gc&&!inProc&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
           <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:6}}>Pay with Gift Card</div>
-          <div style={{fontSize:13,color:"#4A148C",fontWeight:600,background:"#EDE1F5",borderRadius:8,padding:"8px 10px",marginBottom:10}}>⚠️ The gift card must be <b>Binance</b> or <b>Rewarble Global</b>. Other gift cards are not accepted.</div>
-          <div style={{fontSize:12,color:"#666",marginBottom:10}}>Enter the code and upload a clear photo of the card. We&apos;ll review it and confirm your access.</div>
+          <div style={{fontSize:13,color:"#4A148C",fontWeight:700,background:"#EDE1F5",borderRadius:8,padding:"10px 12px",marginBottom:10,lineHeight:1.5}}>⚠️ We ONLY accept <b>Binance</b> or <b>Rewarble Global</b> gift cards. Any other card (Amazon, Steam, iTunes, Google Play, etc.) will be rejected and your money lost.</div>
+          <div style={{fontSize:12.5,color:"#3a3a3a",marginBottom:10,lineHeight:1.7,background:"#fff",border:"1px solid #E1BEE7",borderRadius:8,padding:"10px 12px"}}>
+            <div style={{fontWeight:800,color:"#4A148C",marginBottom:6}}>How to buy &amp; pay (step by step):</div>
+            <div style={{marginBottom:4}}><b>1.</b> Don&apos;t have one? Open Google and search: <b>&quot;buy Rewarble Global gift card&quot;</b> or <b>&quot;Binance Gift Card&quot;</b>.</div>
+            <div style={{marginBottom:4}}><b>2.</b> Buy it on the official site (<b>rewarble.com</b> or <b>binance.com</b>) or a trusted reseller, for at least <b>${ch.price} USD</b>.</div>
+            <div style={{marginBottom:4}}><b>3.</b> After buying, you get a <b>code</b>. Copy it and take a <b>clear photo</b> of the card/code.</div>
+            <div style={{marginBottom:4}}><b>4.</b> Paste the code below and upload the photo.</div>
+            <div><b>5.</b> Press Submit. We verify it and unlock your access.</div>
+          </div>
           <input placeholder="Gift card code" value={code} onChange={e=>setCode(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #bbb",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"}}/>
           <ImgUp value={proof} onChange={setProof}/>
           <div style={{display:"flex",gap:8,marginTop:8}}>
