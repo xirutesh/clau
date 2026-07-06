@@ -4,8 +4,8 @@ import { Menu, X, Play, HardDrive, Eye, Star, ChevronDown, ChevronUp, Globe, Fil
 
 const SB_URL="https://ehdtctlhfbvflgfdjhkc.supabase.co";
 const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
-const SB_SVC="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzEzNzE1OCwiZXhwIjoyMDk4NzEzMTU4fQ.tCdQ1rysPZCz01UQiJJO-STbmkaIVSF40Kbw_YCB02s";
-const NOWPAY="4RXWKAK-1V4M63Y-QVVB71D-8HQSRC3";
+// SERVICE_ROLE key -> app/api/db/route.js ; NOWPAYMENTS key -> app/api/pay/route.js.
+// Neither secret ships to the browser.
 const G="#E5A816",R="#C0392B",PK="#F06292";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
@@ -16,16 +16,32 @@ function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.inne
 
 const api={
   h:t=>({"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${t||SB_ANON}`}),
-  ha:()=>({"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${SB_SVC}`}),
   async get(tb,q="",t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{headers:api.h(t)});const d=await r.json();return Array.isArray(d)?d:[];}catch{return[];}},
   async getOne(tb,q,t){const d=await api.get(tb,q,t);return d[0]||null;},
   async post(tb,data,t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}`,{method:"POST",headers:{...api.h(t),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.json();}catch{return null;}},
   async patch(tb,q,data,t){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"PATCH",headers:{...api.h(t),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.ok;}catch{return false;}},
   async del(tb,q,t){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"DELETE",headers:api.h(t)});return true;}catch{return false;}},
-  async aGet(tb,q=""){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{headers:api.ha()});return r.json();}catch{return[];}},
-  async aPatch(tb,q,d){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"PATCH",headers:{...api.ha(),"Prefer":"return=representation"},body:JSON.stringify(d)});return true;}catch{return false;}},
-  async aPost(tb,data){try{const r=await fetch(`${SB_URL}/rest/v1/${tb}`,{method:"POST",headers:{...api.ha(),"Prefer":"return=representation"},body:JSON.stringify(data)});return r.json();}catch{return null;}},
-  async aDel(tb,q){try{await fetch(`${SB_URL}/rest/v1/${tb}?${q}`,{method:"DELETE",headers:api.ha()});return true;}catch{return false;}},
+  // Privileged ops go through /api/db, which holds the service_role key server-side
+  // and validates the caller's admin session. Attach the session token; on 401
+  // (expired token) refresh once and retry so the admin session doesn't die hourly.
+  async adb(payload){
+    const send=()=>{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}
+      return fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify(payload)});};
+    let r=await send();
+    if(r.status===401&&await api.refreshToken())r=await send();
+    return r;
+  },
+  async refreshToken(){
+    try{const s=JSON.parse(localStorage.getItem("auth")||"null");if(!s?.refresh)return false;
+      const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh})});
+      if(!r.ok)return false;const d=await r.json();if(!d.access_token)return false;
+      localStorage.setItem("auth",JSON.stringify({...s,token:d.access_token,refresh:d.refresh_token||s.refresh}));return true;
+    }catch{return false;}
+  },
+  async aGet(tb,q=""){try{const r=await api.adb({method:"GET",table:tb,query:q});const d=await r.json();return Array.isArray(d)?d:[];}catch{return[];}},
+  async aPatch(tb,q,d){try{const r=await api.adb({method:"PATCH",table:tb,query:q,data:d});return r.ok;}catch{return false;}},
+  async aPost(tb,data){try{const r=await api.adb({method:"POST",table:tb,data});return r.json();}catch{return null;}},
+  async aDel(tb,q){try{await api.adb({method:"DELETE",table:tb,query:q});return true;}catch{return false;}},
 };
 function saveAuth(a){try{localStorage.setItem("auth",JSON.stringify(a))}catch{}}
 const dId=id=>((id*9301+49297)%99999).toString().padStart(5,"0");
@@ -50,7 +66,7 @@ function ImgUp({value,onChange}){
 // Channel Page
 function ChPage({ch,config,auth,onAuth}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
-  const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("https://api.nowpayments.io/v1/invoice",{method:"POST",headers:{"x-api-key":NOWPAY,"Content-Type":"application/json"},body:JSON.stringify({price_amount:ch.price,price_currency:"usd",order_id:`ch_${ch.id}_${Date.now()}`,order_description:`${ch.name} - 1 Month`})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{window.open(`https://nowpayments.io/payment/?api_key=${NOWPAY}&price_amount=${ch.price}&price_currency=usd`,"_blank");}setPay(false);};
+  const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
       <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
@@ -107,12 +123,12 @@ function Auth({onLogin,onBack,defaultMode}){
       // Save username to profile
       if(d.user?.id){await api.aPatch("profiles",`id=eq.${d.user.id}`,{username:user});}
       // Auto-confirm user via service role (fake emails can't confirm)
-      if(d.user?.id){await fetch(`${SB_URL}/auth/v1/admin/users/${d.user.id}`,{method:"PUT",headers:{"apikey":SB_ANON,"Content-Type":"application/json","Authorization":`Bearer ${SB_SVC}`},body:JSON.stringify({email_confirm:true})}).catch(()=>null);}
+      if(d.user?.id){await api.adb({op:"confirm-email",userId:d.user.id}).catch(()=>null);}
       // Auto-login after confirm
       const lr=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);
-      if(lr&&lr.ok){const ld=await lr.json();const p=await api.getOne("profiles",`id=eq.${ld.user.id}&select=*`,ld.access_token);const a={token:ld.access_token,user:ld.user,role:p?.role||"user",username:user};saveAuth(a);onLogin(a);return;}
+      if(lr&&lr.ok){const ld=await lr.json();const p=await api.getOne("profiles",`id=eq.${ld.user.id}&select=*`,ld.access_token);const a={token:ld.access_token,refresh:ld.refresh_token,user:ld.user,role:p?.role||"user",username:user};saveAuth(a);onLogin(a);return;}
       setOk("Account created! Log in.");setMode("login");setBusy(false);return;
-    }else{const email=fakeEmail(user);const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){if(r.status>=500)setErr("Server error. Try again later.");else setErr("Invalid username or password.");setBusy(false);return;}const p=await api.getOne("profiles",`id=eq.${d.user.id}&select=*`,d.access_token);const uname=p?.username||user;const a={token:d.access_token,user:d.user,role:p?.role||"user",username:uname};saveAuth(a);onLogin(a);}setBusy(false);};
+    }else{const email=fakeEmail(user);const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){if(r.status>=500)setErr("Server error. Try again later.");else setErr("Invalid username or password.");setBusy(false);return;}const p=await api.getOne("profiles",`id=eq.${d.user.id}&select=*`,d.access_token);const uname=p?.username||user;const a={token:d.access_token,refresh:d.refresh_token,user:d.user,role:p?.role||"user",username:uname};saveAuth(a);onLogin(a);}setBusy(false);};
   return<div style={{minHeight:"100dvh",background:"#e8e8e8"}}><div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}><ArrowLeft size={22} color="#fff" style={{cursor:"pointer"}} onClick={onBack}/><span style={{color:"#fff",fontWeight:900,fontSize:18}}>{mode==="login"?"Authorization":"Registration"}</span></div><div style={{padding:"20px 16px",display:"flex",justifyContent:"center"}}><div style={{background:"#f5f5f5",borderRadius:4,padding:"24px 20px",width:"100%",maxWidth:360,border:"1px solid #ddd"}}>
     <input placeholder="username" value={user} onChange={e=>{setUser(e.target.value);setErr("")}} style={inp}/>
     <input placeholder="password" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&mode==="login"&&go()}/>
