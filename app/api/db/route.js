@@ -16,7 +16,7 @@ const SB_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
 const SB_SVC = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const ALLOWED_TABLES = new Set(["channels", "profiles", "site_config"]);
+const ALLOWED_TABLES = new Set(["channels", "profiles", "site_config", "gift_submissions"]);
 const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
 
 function svcHeaders(extra) {

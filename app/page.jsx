@@ -66,12 +66,28 @@ function ImgUp({value,onChange}){
 // Channel Page
 function ChPage({ch,config,auth,onAuth}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
+  const[gc,setGc]=useState(false);const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
+  const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
       <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
       <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:800,fontSize:18,color:"#1a1a1a"}}>Full Access</div><div style={{color:G,fontSize:15,marginTop:4,fontWeight:600}}>{ch.name}</div></div>
-      <div style={{padding:"8px 20px 20px"}}><button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button></div>
+      <div style={{padding:"8px 20px 20px"}}>
+        <button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button>
+        {!gc&&!done&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
+        {gc&&!done&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
+          <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:6}}>Pay with Gift Card</div>
+          <div style={{fontSize:12,color:"#666",marginBottom:10}}>Enter the gift card code and upload a photo of the card. We&apos;ll review it and confirm your access.</div>
+          <input placeholder="Gift card code" value={code} onChange={e=>setCode(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #bbb",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"}}/>
+          <ImgUp value={proof} onChange={setProof}/>
+          <div style={{display:"flex",gap:8,marginTop:8}}>
+            <button onClick={subGift} disabled={sub} style={{flex:1,padding:12,borderRadius:8,border:"none",fontWeight:700,color:"#fff",cursor:"pointer",background:"#8E24AA",opacity:sub?0.7:1}}>{sub?"Sending...":"Submit"}</button>
+            <button onClick={()=>{setGc(false);setCode("");setProof("")}} style={{padding:"12px 16px",borderRadius:8,border:"1px solid #ccc",background:"#fff",color:"#555",fontWeight:700,cursor:"pointer"}}>Cancel</button>
+          </div>
+        </div>}
+        {done&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#E8F5E9",border:"1px solid #A5D6A7",textAlign:"center",color:"#2E7D32",fontWeight:600,fontSize:14}}>✅ Submitted! We&apos;ll review your payment and confirm your access shortly.</div>}
+      </div>
     </div></div>
     <div style={{padding:"12px 16px"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
@@ -129,7 +145,7 @@ function Auth({onLogin,onBack,defaultMode}){
       if(lr&&lr.ok){const ld=await lr.json();const p=await api.getOne("profiles",`id=eq.${ld.user.id}&select=*`,ld.access_token);const a={token:ld.access_token,refresh:ld.refresh_token,user:ld.user,role:p?.role||"user",username:user};saveAuth(a);onLogin(a);return;}
       setOk("Account created! Log in.");setMode("login");setBusy(false);return;
     }else{const email=fakeEmail(user);const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){if(r.status>=500)setErr("Server error. Try again later.");else setErr("Invalid username or password.");setBusy(false);return;}const p=await api.getOne("profiles",`id=eq.${d.user.id}&select=*`,d.access_token);const uname=p?.username||user;const a={token:d.access_token,refresh:d.refresh_token,user:d.user,role:p?.role||"user",username:uname};saveAuth(a);onLogin(a);}setBusy(false);};
-  return<div style={{minHeight:"100dvh",background:"#e8e8e8"}}><div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}><ArrowLeft size={22} color="#fff" style={{cursor:"pointer"}} onClick={onBack}/><span style={{color:"#fff",fontWeight:900,fontSize:18}}>{mode==="login"?"Authorization":"Registration"}</span></div><div style={{padding:"20px 16px",display:"flex",justifyContent:"center"}}><div style={{background:"#f5f5f5",borderRadius:4,padding:"24px 20px",width:"100%",maxWidth:360,border:"1px solid #ddd"}}>
+  return<div style={{minHeight:"100dvh",background:"#e8e8e8",animation:"authDrop 0.4s cubic-bezier(0.22,1,0.36,1)"}}><style>{`@keyframes authDrop{from{transform:translateY(-100%);opacity:.4}to{transform:translateY(0);opacity:1}}`}</style><div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}><ArrowLeft size={22} color="#fff" style={{cursor:"pointer"}} onClick={onBack}/><span style={{color:"#fff",fontWeight:900,fontSize:18}}>{mode==="login"?"Authorization":"Registration"}</span></div><div style={{padding:"20px 16px",display:"flex",justifyContent:"center"}}><div style={{background:"#f5f5f5",borderRadius:4,padding:"24px 20px",width:"100%",maxWidth:360,border:"1px solid #ddd"}}>
     <input placeholder="username" value={user} onChange={e=>{setUser(e.target.value);setErr("")}} style={inp}/>
     <input placeholder="password" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&mode==="login"&&go()}/>
     {mode==="signup"&&<input placeholder="password check" type="password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&go()}/>}
@@ -137,10 +153,10 @@ function Auth({onLogin,onBack,defaultMode}){
     {err&&<div style={{color:R,fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
     {mode==="login"?<>
       <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:G,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Authorization"}</button>
-      <button onClick={()=>{setMode("signup");setErr("")}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
+      <button onClick={()=>{setMode("signup");setErr("");try{window.history.replaceState(null,"","#signup")}catch{}}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
     </>:<>
       <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Registration"}</button>
-      <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("")}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
+      <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("");try{window.history.replaceState(null,"","#login")}catch{}}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
     </>}
   </div></div></div>;
 }
@@ -186,14 +202,14 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);
-  const[users,setUsers]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
+  const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
   const rawH=Array.isArray(config?.sections)?config.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
   const homeSecs=[eS("top-selling","Top Selling Section of the Month"),eS("top-viewed","Top Viewed Videos of the Month"),eS("latest","Latest Updates")];
 
-  useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);})},[]);
+  useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);});api.aGet("gift_submissions","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setSubs(d);})},[]);
 
   const saveCh=async()=>{if(!form.name)return;setSav(true);
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
@@ -205,6 +221,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
+  const acceptSub=async(s)=>{const chObj=channels.find(c=>String(c.id)===String(s.channel_id));const link=chObj?.delivery_link||config?.global_delivery_link||"";if(s.user_id&&link)await api.aPatch("profiles",`id=eq.${s.user_id}`,{delivery_link:link});await api.aPatch("gift_submissions",`id=eq.${s.id}`,{status:"accepted"});setSubs(x=>x.map(v=>v.id===s.id?{...v,status:"accepted"}:v));notify(link?`✅ Accepted & delivered to ${s.username||"user"}`:"✅ Accepted (set a delivery link on the channel)");};
+  const rejectSub=async(s)=>{await api.aPatch("gift_submissions",`id=eq.${s.id}`,{status:"rejected"});setSubs(x=>x.map(v=>v.id===s.id?{...v,status:"rejected"}:v));notify("❌ Rejected");};
   const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
   const allS=channels.length>0&&sel.size===channels.length;
 
@@ -216,12 +234,32 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const fUsers=config?.fake_users||12840;
   const fUA=config?.fake_users_annual||"+3200";
 
-  const tabs=[{k:"channels",l:"Channels",i:<Film size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
+  const tabs=[{k:"channels",l:"Channels",i:<Film size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
 
   return<div style={{position:"fixed",inset:0,background:"#f5f5f5",zIndex:2000,overflowY:"auto"}}>
     {toast&&<Toast key={toast.k} msg={toast.msg} type={toast.type} onDone={()=>setToast(null)}/>}
     <div style={{background:"#1a1a1a",color:"#fff",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><Settings size={20} color={G}/><span style={{fontWeight:800,fontSize:16}}>Admin</span></div><div style={{display:"flex",gap:8}}><button onClick={()=>{onClose();if(typeof onLogout==="function")onLogout()}} style={{background:"#555",color:"#fff",border:"none",padding:"6px 12px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4}}><LogOut size={12}/>Sign Out</button><button onClick={onClose} style={{background:G,color:"#fff",border:"none",padding:"6px 16px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13}}>← Site</button></div></div>
     <div style={{display:"flex",background:"#fff",borderBottom:"2px solid #eee",overflowX:"auto"}}>{tabs.map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{flex:1,minWidth:50,padding:"10px 0",border:"none",cursor:"pointer",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:3,background:tab===t.k?G:"#fff",color:tab===t.k?"#fff":"#777"}}>{t.i}{t.l}</button>)}</div>
+
+    {tab==="payments"&&<div style={{padding:16}}>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:12,color:"#1a1a1a"}}>💳 Manual Payments ({subs.filter(s=>s.status==="pending").length} pending)</div>
+      {subs.length===0&&<div style={{color:"#777",fontSize:14}}>No submissions yet.</div>}
+      {subs.map(s=><div key={s.id} style={{background:"#fff",borderRadius:10,padding:14,marginBottom:10,border:"1px solid #eee"}}>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+          {s.photo&&<img src={s.photo} alt="" style={{width:90,height:90,objectFit:"cover",borderRadius:8,border:"1px solid #ddd"}}/>}
+          <div style={{flex:1,minWidth:160}}>
+            <div style={{fontWeight:700,fontSize:14,color:"#1a1a1a"}}>{s.username||"user"} · <span style={{color:"#8E24AA"}}>{s.method||"Gift Card"}</span></div>
+            <div style={{fontSize:13,color:"#555",marginTop:2}}>{s.channel_name} · ${s.price}</div>
+            <div style={{fontSize:13,color:"#333",marginTop:4,wordBreak:"break-all"}}>Code: <b>{s.code}</b></div>
+            <div style={{marginTop:6}}><span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:s.status==="accepted"?"#E8F5E9":s.status==="rejected"?"#FDE8E8":"#FFF3E0",color:s.status==="accepted"?"#2E7D32":s.status==="rejected"?"#C62828":"#E65100"}}>{(s.status||"pending").toUpperCase()}</span></div>
+          </div>
+        </div>
+        {s.status==="pending"&&<div style={{display:"flex",gap:8,marginTop:10}}>
+          <button onClick={()=>acceptSub(s)} style={{flex:1,padding:9,borderRadius:8,border:"none",background:"#27ae60",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}>Accept</button>
+          <button onClick={()=>rejectSub(s)} style={{flex:1,padding:9,borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}>Reject</button>
+        </div>}
+      </div>)}
+    </div>}
 
     {tab==="channels"&&<div style={{padding:16}}>
       <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
@@ -291,6 +329,8 @@ export default function App(){
   const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();window.history.replaceState(null,"",window.location.pathname);};
   const openAdmin=()=>{setSAd(true);saveRoute({t:"admin"});window.history.replaceState(null,"",window.location.pathname);};
   const closeAdmin=()=>{setSAd(false);clearRoute();window.history.replaceState(null,"",window.location.pathname);load();};
+  const openAuth=(m)=>{setSCh(null);setIP(null);setMO(false);setSAd(false);setPendCh(null);setAM(m);setSA(true);saveRoute({t:"auth",m});window.history.replaceState(null,"","#"+m);window.scrollTo(0,0);};
+  const closeAuth=()=>{setSA(false);clearRoute();window.history.replaceState(null,"",window.location.pathname);window.scrollTo(0,0);};
 
   useEffect(()=>{
     let vp=document.querySelector('meta[name="viewport"]');
@@ -305,6 +345,7 @@ export default function App(){
     if(h){
       // Shared link - hash takes priority
       if(["p053","p041","p072"].includes(h)){setIP(h);}
+      else if(h==="login"||h==="signup"){if(!s){setAM(h);setSA(true);}}
       else if(/^\d{5}$/.test(h)){setPendCh(h);}// display ID, resolve after load
       else{// fallback to localStorage
         const r=loadRoute();
@@ -335,8 +376,8 @@ export default function App(){
 
   if(!mounted)return null;
 
-  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();setSAd(false);setAM("login");setSA(true);saveRoute({t:"auth",m:"login"});}}/>;
-  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSA(false);setSAd(false);clearRoute();window.scrollTo(0,0)}} onBack={()=>{setSA(false);clearRoute();window.scrollTo(0,0)}}/>;
+  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();openAuth("login");}}/>;
+  if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSAd(false);closeAuth()}} onBack={()=>closeAuth()}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
   const waiting=pendCh!==null&&!sCh;
@@ -357,10 +398,10 @@ export default function App(){
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():(setAM("login"),setSA(true),saveRoute({t:"auth",m:"login"}))}} onLogout={()=>{setAuth(null);clearAuth();setMO(false);setAM("login");setSA(true);saveRoute({t:"auth",m:"login"});window.scrollTo(0,0)}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
-    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>{setAM("signup");setSA(true);saveRoute({t:"auth",m:"signup"})}}/></div>
+    :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")}/></div>
     :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/></div></div>
     :<>
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:12}}>
