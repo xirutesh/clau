@@ -59,14 +59,14 @@ function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",m
 // Baked-in watermark: tiled "www.xirute.com" in diagonal, low opacity. Survives download/screenshot.
 function stampWatermark(ctx,w,h){
   ctx.save();
-  ctx.globalAlpha=0.16;
+  ctx.globalAlpha=0.22;
   ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.shadowColor="rgba(0,0,0,0.35)";ctx.shadowBlur=2;
-  ctx.font=`bold ${Math.max(13,Math.round(w/26))}px Arial, sans-serif`;
+  ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=3;
+  ctx.font=`bold ${Math.max(10,Math.round(w/42))}px Arial, sans-serif`;
   ctx.textBaseline="middle";ctx.textAlign="center";
   ctx.translate(w/2,h/2);ctx.rotate(-Math.PI/6);
   const t="www.xirute.com",tw=ctx.measureText(t).width;
-  const sx=tw+44,sy=Math.max(46,Math.round(w/7)),R=Math.sqrt(w*w+h*h);
+  const sx=tw+26,sy=Math.max(26,Math.round(w/13)),R=Math.sqrt(w*w+h*h);
   for(let y=-R;y<R;y+=sy)for(let x=-R;x<R;x+=sx)ctx.fillText(t,x,y);
   ctx.restore();
 }
