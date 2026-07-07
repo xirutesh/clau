@@ -60,10 +60,10 @@ function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",m
 // 4 corner watermarks (top-left, top-right, bottom-left, bottom-right). Subtle, not tiled.
 function stampWatermark(ctx,w,h){
   ctx.save();
-  ctx.globalAlpha=0.28;
-  ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.shadowColor="rgba(0,0,0,0.55)";ctx.shadowBlur=3;
-  const fs=Math.max(11,Math.round(w/34));
+  ctx.globalAlpha=0.42;
+  ctx.fillStyle="rgba(255,255,255,0.98)";
+  ctx.shadowColor="rgba(0,0,0,0.65)";ctx.shadowBlur=4;
+  const fs=Math.max(13,Math.round(w/24));
   ctx.font=`bold ${fs}px Arial, sans-serif`;
   ctx.textBaseline="middle";
   const t="www.xirute.com",m=Math.round(fs*0.8),ty=m+fs/2,by=h-m-fs/2;
@@ -76,7 +76,7 @@ function ImgUp({value,onChange,watermark}){
   const wm=useRef(watermark);wm.current=watermark;
   const hf=f=>{if(!f||!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{try{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}const cv=document.createElement("canvas");cv.width=w;cv.height=h;const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);if(wm.current)stampWatermark(ctx,w,h);ref.current(cv.toDataURL("image/jpeg",0.82));}catch{ref.current(e.target.result);}};img.onerror=()=>ref.current(e.target.result);img.src=e.target.result;};r.readAsDataURL(f);};
   useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/")){hf(it[i].getAsFile());e.preventDefault();return;}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
-  return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:120,height:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
+  return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:watermark?260:120,height:watermark?146:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
 }
 
 // Channel Page
