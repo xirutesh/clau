@@ -59,13 +59,14 @@ async function getConfig() {
 async function handleStart(msg, payload) {
   const { channelId, userId } = parsePayload(payload);
   const chatId = msg.chat.id;
-  if (!Number.isFinite(channelId)) {
-    await tg("sendMessage", { chat_id: chatId, text: "Open this from the website to start a payment." });
+  const backMsg = '👋 To buy a product, go back to the website, open a channel and tap "Telegram Stars".';
+  if (!payload || !Number.isFinite(channelId) || channelId <= 0) {
+    await tg("sendMessage", { chat_id: chatId, text: backMsg });
     return;
   }
   const ch = await getChannel(channelId);
   if (!ch) {
-    await tg("sendMessage", { chat_id: chatId, text: "Channel not found." });
+    await tg("sendMessage", { chat_id: chatId, text: backMsg });
     return;
   }
   const cfg = await getConfig();
