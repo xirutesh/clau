@@ -54,7 +54,7 @@ function LI({src,size=40}){return src?<img src={src} alt="" style={{width:size,h
 function Spin({t}){return<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,gap:8,color:"#555",flexDirection:"column"}}><div style={{width:44,height:44,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>{t&&<span style={{fontSize:13,marginTop:8}}>{t}</span>}<style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>}
 function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{background:"#fff",borderRadius:12,padding:"18px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{color:G,fontWeight:700,fontSize:13}}>{label}</div>{ready?<div style={{fontSize:28,fontWeight:800,color:"#1a1a1a",letterSpacing:-1,marginTop:4}}>{value}</div>:null}<div style={{fontSize:12,color:"#666",marginTop:4}}>{sub} {ready&&change?<span style={{color:"#27ae60",fontWeight:700}}>{change}</span>:null}</div></div><div style={{width:42,height:42,borderRadius:10,border:`2px solid ${iconBg}`,display:"flex",alignItems:"center",justifyContent:"center",color:iconBg}}>{icon}</div></div></div>}
 
-function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div></div>}
+function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#555",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
 // Baked-in watermark: tiled "www.xirute.com" in diagonal, low opacity. Survives download/screenshot.
 // 4 corner watermarks (top-left, top-right, bottom-left, bottom-right). Subtle, not tiled.
@@ -122,7 +122,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
       <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#ccc",paddingTop:"56.25%",position:"relative",borderBottom:"2px solid #c0392b"}}>{!ch.image_url&&<Film size={50} color="#999" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
       <div style={{padding:"16px 16px 0"}}><div style={{background:"#FDE8E8",padding:"14px 16px",borderRadius:4,color:"#c0392b",textAlign:"center",fontSize:15,fontWeight:500}}>Download link , available after purchases.</div></div>
       {ch.description&&<div style={{padding:"14px 16px 0",fontSize:15,color:"#333",lineHeight:1.6,borderLeft:"3px solid #ddd",marginLeft:16,marginTop:12,paddingLeft:12}}>{ch.description}</div>}
-      <div style={{padding:"16px 16px 20px",fontSize:16,color:"#1a1a1a"}}><div style={{lineHeight:2.2}}><div><span style={{fontWeight:800}}>Resolution:</span> {ch.resolution||"—"}</div><div><span style={{fontWeight:800}}>Duration:</span> {ch.duration||"—"}</div></div></div>
+      <div style={{padding:"16px 16px 20px",fontSize:16,color:"#1a1a1a"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{lineHeight:2.2}}><div><span style={{fontWeight:800}}>Resolution:</span> {ch.resolution||"—"}</div><div><span style={{fontWeight:800}}>Duration:</span> {ch.duration||"—"}</div></div><div><span style={{fontWeight:800}}>Views:</span> {ch.views||0}</div></div></div>
     </div></div>}
   </div>;
 }
@@ -211,7 +211,7 @@ function SiteTab({config,sCfg,inp}){
       <div style={{fontSize:11,color:"#888",marginTop:-4,marginBottom:4}}>Ex: 50 → a $30 channel costs 1500 Stars</div>
     </div>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📊 Fake Users</div>
-      <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Videos, Content Size & Views auto-calculate. Users are fake.</div>
+      <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Views auto-calculates. Users are fake.</div>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Annual Growth</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+3200"/>
     </div>
@@ -262,7 +262,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const fUsers=config?.fake_users||12840;
   const fUA=config?.fake_users_annual||"+3200";
 
-  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>}];
+  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
   const chForm=<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
     <input placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}/>
     <textarea placeholder="Description (shown when user clicks the product)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{...inp,minHeight:50,resize:"vertical"}}/>
@@ -337,7 +337,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
     {tab==="site"&&<SiteTab config={config} sCfg={sCfg} inp={inp}/>}
 
-    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Videos",v:aVids,c:"#27ae60"},{l:"Content Size",v:aSize,c:"#e67e22"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:13,color:"#555",fontWeight:600,fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
+    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:13,color:"#555",fontWeight:600,fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
   </div>;
 }
 
@@ -450,6 +450,10 @@ export default function App(){
     :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/></div></div>
     :<>
       {hasPending&&<div style={{margin:pad,padding:"12px 16px",background:"#FFF3E0",border:"1px solid #FFCC80",borderRadius:10,color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
+      <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.mobile?"1fr":"1fr 1fr",gap:12}}>
+        <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
+        <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
+      </div>
       {!ready&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{width:36,height:36,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto"}}/></div>}
 
       {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
