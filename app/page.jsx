@@ -56,9 +56,24 @@ function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{backg
 
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#555",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
-function ImgUp({value,onChange}){
+// Baked-in watermark: tiled "www.xirute.com" in diagonal, low opacity. Survives download/screenshot.
+function stampWatermark(ctx,w,h){
+  ctx.save();
+  ctx.globalAlpha=0.16;
+  ctx.fillStyle="rgba(255,255,255,0.95)";
+  ctx.shadowColor="rgba(0,0,0,0.35)";ctx.shadowBlur=2;
+  ctx.font=`bold ${Math.max(13,Math.round(w/26))}px Arial, sans-serif`;
+  ctx.textBaseline="middle";ctx.textAlign="center";
+  ctx.translate(w/2,h/2);ctx.rotate(-Math.PI/6);
+  const t="www.xirute.com",tw=ctx.measureText(t).width;
+  const sx=tw+44,sy=Math.max(46,Math.round(w/7)),R=Math.sqrt(w*w+h*h);
+  for(let y=-R;y<R;y+=sy)for(let x=-R;x<R;x+=sx)ctx.fillText(t,x,y);
+  ctx.restore();
+}
+function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
-  const hf=f=>{if(!f||!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{try{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}const cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);ref.current(cv.toDataURL("image/jpeg",0.82));}catch{ref.current(e.target.result);}};img.onerror=()=>ref.current(e.target.result);img.src=e.target.result;};r.readAsDataURL(f);};
+  const wm=useRef(watermark);wm.current=watermark;
+  const hf=f=>{if(!f||!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{try{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}const cv=document.createElement("canvas");cv.width=w;cv.height=h;const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);if(wm.current)stampWatermark(ctx,w,h);ref.current(cv.toDataURL("image/jpeg",0.82));}catch{ref.current(e.target.result);}};img.onerror=()=>ref.current(e.target.result);img.src=e.target.result;};r.readAsDataURL(f);};
   useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/")){hf(it[i].getAsFile());e.preventDefault();return;}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
   return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:120,height:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
 }
@@ -256,7 +271,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Image:</div>
-    <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})}/>
+    <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})} watermark/>
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.top_selling} onChange={e=>setForm({...form,top_selling:e.target.checked})}/>Top Selling</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_top_viewed} onChange={e=>setForm({...form,section_top_viewed:e.target.checked})}/>Top Viewed</label><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
