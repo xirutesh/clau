@@ -57,17 +57,18 @@ function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{backg
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.7)",color:"#fff",padding:"4px 12px",borderRadius:6,fontSize:12,fontWeight:700}}>{v.resolution||"1080P"}</div><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#555",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
 // Baked-in watermark: tiled "www.xirute.com" in diagonal, low opacity. Survives download/screenshot.
+// 4 corner watermarks (top-left, top-right, bottom-left, bottom-right). Subtle, not tiled.
 function stampWatermark(ctx,w,h){
   ctx.save();
-  ctx.globalAlpha=0.22;
+  ctx.globalAlpha=0.28;
   ctx.fillStyle="rgba(255,255,255,0.95)";
-  ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=3;
-  ctx.font=`bold ${Math.max(10,Math.round(w/42))}px Arial, sans-serif`;
-  ctx.textBaseline="middle";ctx.textAlign="center";
-  ctx.translate(w/2,h/2);ctx.rotate(-Math.PI/6);
-  const t="www.xirute.com",tw=ctx.measureText(t).width;
-  const sx=tw+26,sy=Math.max(26,Math.round(w/13)),R=Math.sqrt(w*w+h*h);
-  for(let y=-R;y<R;y+=sy)for(let x=-R;x<R;x+=sx)ctx.fillText(t,x,y);
+  ctx.shadowColor="rgba(0,0,0,0.55)";ctx.shadowBlur=3;
+  const fs=Math.max(11,Math.round(w/34));
+  ctx.font=`bold ${fs}px Arial, sans-serif`;
+  ctx.textBaseline="middle";
+  const t="www.xirute.com",m=Math.round(fs*0.8),ty=m+fs/2,by=h-m-fs/2;
+  ctx.textAlign="left";ctx.fillText(t,m,ty);ctx.fillText(t,m,by);
+  ctx.textAlign="right";ctx.fillText(t,w-m,ty);ctx.fillText(t,w-m,by);
   ctx.restore();
 }
 function ImgUp({value,onChange,watermark}){
