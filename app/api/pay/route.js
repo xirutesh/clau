@@ -30,8 +30,8 @@ export async function POST(request) {
     return Response.json({ error: "Missing or invalid channelId" }, { status: 400 });
   }
 
-  // Look up the real channel (price + name) server-side. channels are public (RLS off),
-  // so the anon key is enough here — no service key needed.
+  // Look up the real channel (price + name) server-side. channels have a public
+  // SELECT policy (RLS on), so the anon key is enough here — no service key needed.
   const cr = await fetch(
     `${SB_URL}/rest/v1/channels?id=eq.${id}&select=id,name,price`,
     { headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` } }
