@@ -10,7 +10,7 @@ const G="#E5A816",R="#C0392B",PK="#F06292";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
-const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:12840,fake_users_annual:"+3200",stars_per_usd:50};
+const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+355",fake_users_annual_year:null,stars_per_usd:50};
 
 function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
 
@@ -116,7 +116,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         {inProc&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#FFF3E0",border:"1px solid #FFCC80",textAlign:"center",color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       </div>
     </div></div>
-    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>TOTAL COUNT: {ch.video_count||0}</div></div></div>
+    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>VIDEO COUNT: {ch.video_count||0}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
@@ -191,9 +191,9 @@ function Auth({onLogin,onBack,defaultMode}){
 // Site Settings Tab (with Save button)
 function SiteTab({config,sCfg,inp}){
   const cats=Array.isArray(config?.categories)?config.categories.filter(c=>c!=="INFO"):["Action"];
-  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users||12840,fake_users_annual:config?.fake_users_annual||"+3200",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50,stars_per_usd:config?.stars_per_usd||50});
+  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users??345,fake_users_annual:config?.fake_users_annual??"+355",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50,stars_per_usd:config?.stars_per_usd||50});
   const[saved,setSaved]=useState(false);
-  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50,stars_per_usd:Number(f.stars_per_usd)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,fake_users_annual_year:new Date().getFullYear(),logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50,stars_per_usd:Number(f.stars_per_usd)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
   return<div style={{padding:16}}>
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>🖼️ Site Logo</div>
       <ImgUp value={f.logo_url} onChange={v=>setF({...f,logo_url:v})}/>
@@ -214,7 +214,7 @@ function SiteTab({config,sCfg,inp}){
     <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📊 Fake Users</div>
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Views auto-calculates. Users are fake.</div>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
-      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Annual Growth</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+3200"/>
+      <label style={{fontSize:13,color:"#555",fontWeight:600}}>Annual Growth (resets each year)</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+355"/>
     </div>
     <button onClick={save} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:saved?"#27ae60":G,color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer"}}>{saved?"✅ Saved!":"Save Changes"}</button>
   </div>;
@@ -260,8 +260,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const aViews=channels.reduce((a,c)=>a+(c.views||0),0);
   const aSizeMB=channels.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
   const aSize=aSizeMB>1024?`${(aSizeMB/1024).toFixed(2)}GB`:`${aSizeMB.toFixed(0)}MB`;
-  const fUsers=config?.fake_users||12840;
-  const fUA=config?.fake_users_annual||"+3200";
+  const fUsers=config?.fake_users??345;
+  const fUA=config?.fake_users_annual??"+355";
 
   const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
   const chForm=<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
@@ -355,7 +355,7 @@ export default function App(){
   const[mounted,setMounted]=useState(false);const[ready,setReady]=useState(false);
   const scr=useScreen();const isA=auth?.role==="admin";
   const[pendCh,setPendCh]=useState(null);
-  const[userCount,setUserCount]=useState(0);
+  const[userCount,setUserCount]=useState(0);const[yearCount,setYearCount]=useState(0);
   const[mySubs,setMySubs]=useState([]);
 
   const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){saveRoute({t:"ch",id:ch.id});window.history.replaceState(null,"","#"+dId(ch.id));
@@ -406,7 +406,10 @@ export default function App(){
     // Try hash first (shared link), then localStorage
     if(h&&/^\d{5}$/.test(h)){const found=c.find(x=>dId(x.id)===h);if(found){setSCh(found);setPendCh(null);saveRoute({t:"ch",id:found.id});}}
     else if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
-    const u=await api.aGet("profiles","select=id");if(Array.isArray(u))setUserCount(u.length);
+    // created_at lets us split "total ever" from "signed up this year" (annual counter).
+    const u=await api.aGet("profiles","select=id,created_at");
+    if(Array.isArray(u)){const yr=new Date().getFullYear();setUserCount(u.length);
+      setYearCount(u.filter(p=>p.created_at&&new Date(p.created_at).getFullYear()===yr).length);}
   }catch{setChs([]);setCfg(defCfg);}setReady(true)},[]);
   useEffect(()=>{load()},[load]);
 
@@ -435,6 +438,18 @@ export default function App(){
 
   const aVids=chs.reduce((a,c)=>a+(c.video_count||0),0);
   const aViews=chs.reduce((a,c)=>a+(c.views||0),0);
+  // Users: total never resets. Annual = the seeded number (only while it still
+  // belongs to the current year) + real signups from this year, so it rolls over
+  // on its own every 1 January without anyone touching the admin.
+  const curYear=new Date().getFullYear();
+  const seedTotal=Number(cfg.fake_users)||0;
+  // null/undefined = the year column isn't set yet (SQL not run): treat the seed as
+  // belonging to this year so nothing changes until the first rollover.
+  const seedYear=cfg.fake_users_annual_year;
+  const seedAnnual=(seedYear==null||seedYear===curYear)
+    ? (parseInt(String(cfg.fake_users_annual??"").replace(/[^0-9]/g,""),10)||0) : 0;
+  const usersTotal=seedTotal+userCount;
+  const usersAnnual=seedAnnual+yearCount;
   const aSMB=chs.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
   const aS=aSMB>1024?`${(aSMB/1024).toFixed(2)}GB`:`${aSMB.toFixed(0)}MB`;
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
@@ -453,7 +468,7 @@ export default function App(){
       {hasPending&&<div style={{margin:pad,padding:"12px 16px",background:"#FFF3E0",border:"1px solid #FFCC80",borderRadius:10,color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.mobile?"1fr":"1fr 1fr",gap:12}}>
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
-        <SC label="Users" value={(cfg.fake_users||12840)+userCount} sub="new Users (annual)" change={cfg.fake_users_annual||"+3200"} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
+        <SC label="Users" value={usersTotal} sub="new Users (annual)" change={`+${usersAnnual}`} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
       {!ready&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{width:36,height:36,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto"}}/></div>}
 

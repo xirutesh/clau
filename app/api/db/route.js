@@ -46,8 +46,14 @@ function keysSubsetOf(data, allowed) {
 // Operations allowed WITHOUT an admin session (visitors + the signup flow).
 // Kept deliberately narrow so nothing destructive slips through unauthenticated.
 function isPublicOp({ method, table, query, data }) {
-  // Home stats: count of user profiles.
-  if (method === "GET" && table === "profiles" && query === "select=id") return true;
+  // Home stats: count of user profiles. created_at is allowed too so the homepage
+  // can tell this year's signups from the all-time total (annual counter).
+  if (
+    method === "GET" &&
+    table === "profiles" &&
+    (query === "select=id" || query === "select=id,created_at")
+  )
+    return true;
   // Visitor opening a product: +1 view (and nothing but views).
   if (method === "PATCH" && table === "channels" && keysSubsetOf(data, ["views"])) return true;
   // Registration: set the new account's username (and nothing else).
