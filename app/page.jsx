@@ -10,7 +10,7 @@ const G="#E5A816",R="#C0392B",PK="#F06292";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
-const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+355",fake_users_annual_year:null,stars_per_usd:50};
+const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+345",fake_users_annual_year:null,stars_per_usd:50};
 
 function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
 
@@ -191,7 +191,7 @@ function Auth({onLogin,onBack,defaultMode}){
 // Site Settings Tab (with Save button)
 function SiteTab({config,sCfg,inp}){
   const cats=Array.isArray(config?.categories)?config.categories.filter(c=>c!=="INFO"):["Action"];
-  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users??345,fake_users_annual:config?.fake_users_annual??"+355",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50,stars_per_usd:config?.stars_per_usd||50});
+  const[f,setF]=useState({telegram_link:config?.telegram_link||"",global_delivery_link:config?.global_delivery_link||"",fake_users:config?.fake_users??345,fake_users_annual:config?.fake_users_annual??"+345",logo_url:config?.logo_url||"",default_category:config?.default_category||cats[0]||"Action",default_resolution:config?.default_resolution||"1080P",default_price:config?.default_price||50,stars_per_usd:config?.stars_per_usd||50});
   const[saved,setSaved]=useState(false);
   const save=async()=>{await sCfg({telegram_link:f.telegram_link,global_delivery_link:f.global_delivery_link,fake_users:Number(f.fake_users),fake_users_annual:f.fake_users_annual,fake_users_annual_year:new Date().getFullYear(),logo_url:f.logo_url||null,default_category:f.default_category,default_resolution:f.default_resolution,default_price:Number(f.default_price)||50,stars_per_usd:Number(f.stars_per_usd)||50});setSaved(true);setTimeout(()=>setSaved(false),2000);};
   return<div style={{padding:16}}>
@@ -261,7 +261,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const aSizeMB=channels.reduce((a,c)=>{const s=c.size||"0";const n=parseFloat(s)||0;return a+(s.toLowerCase().includes("gb")?n*1024:n)},0);
   const aSize=aSizeMB>1024?`${(aSizeMB/1024).toFixed(2)}GB`:`${aSizeMB.toFixed(0)}MB`;
   const fUsers=config?.fake_users??345;
-  const fUA=config?.fake_users_annual??"+355";
+  const fUA=config?.fake_users_annual??"+345";
 
   const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
   const chForm=<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
