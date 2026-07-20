@@ -180,10 +180,10 @@ function Auth({onLogin,onBack,defaultMode}){
     {err&&<div style={{color:R,fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
     {mode==="login"?<>
       <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:G,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Authorization"}</button>
-      <button onClick={()=>{setMode("signup");setErr("");try{window.history.replaceState(null,"","#signup")}catch{}}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
+      <button onClick={()=>{setMode("signup");setErr("");try{window.history.replaceState({t:"auth",m:"signup"},"","#signup")}catch{}}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
     </>:<>
       <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Registration"}</button>
-      <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("");try{window.history.replaceState(null,"","#login")}catch{}}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
+      <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("");try{window.history.replaceState({t:"auth",m:"login"},"","#login")}catch{}}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
     </>}
   </div></div></div>;
 }
@@ -358,15 +358,37 @@ export default function App(){
   const[userCount,setUserCount]=useState(0);const[yearCount,setYearCount]=useState(0);
   const[mySubs,setMySubs]=useState([]);
 
-  const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){saveRoute({t:"ch",id:ch.id});window.history.replaceState(null,"","#"+dId(ch.id));
+  // Entering a view PUSHES a history entry (replaceState would overwrite the current
+  // one, so Back would leave the site). popstate below restores the matching view.
+  // homeScroll remembers where the visitor was on the list so Back returns them there.
+  const homeScroll=useRef(0);
+  const navCh=(ch)=>{setSCh(ch);setIP(null);setMO(false);setPendCh(null);if(ch){homeScroll.current=window.scrollY;saveRoute({t:"ch",id:ch.id});window.history.pushState({t:"ch",id:ch.id},"","#"+dId(ch.id));
     api.aPatch("channels",`id=eq.${ch.id}`,{views:(ch.views||0)+1}).then(()=>{setChs(prev=>prev.map(c=>c.id===ch.id?{...c,views:(c.views||0)+1}:c));});
-  }else{clearRoute();window.history.replaceState(null,"",window.location.pathname);}};
-  const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p){saveRoute({t:"info",p});window.history.replaceState(null,"","#"+p);}else{clearRoute();window.history.replaceState(null,"",window.location.pathname);}};
-  const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();window.history.replaceState(null,"",window.location.pathname);};
-  const openAdmin=()=>{setSAd(true);saveRoute({t:"admin"});window.history.replaceState(null,"",window.location.pathname);};
-  const closeAdmin=()=>{setSAd(false);clearRoute();window.history.replaceState(null,"",window.location.pathname);load();};
-  const openAuth=(m)=>{setSCh(null);setIP(null);setMO(false);setSAd(false);setPendCh(null);setAM(m);setSA(true);saveRoute({t:"auth",m});window.history.replaceState(null,"","#"+m);window.scrollTo(0,0);};
-  const closeAuth=()=>{setSA(false);clearRoute();window.history.replaceState(null,"",window.location.pathname);window.scrollTo(0,0);};
+  }else{clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);}};
+  const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p){homeScroll.current=window.scrollY;saveRoute({t:"info",p});window.history.pushState({t:"info",p},"","#"+p);}else{clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);}};
+  const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);};
+  const openAdmin=()=>{setSAd(true);saveRoute({t:"admin"});window.history.pushState({t:"admin"},"",window.location.pathname);};
+  const closeAdmin=()=>{setSAd(false);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);load();};
+  const openAuth=(m)=>{setSCh(null);setIP(null);setMO(false);setSAd(false);setPendCh(null);setAM(m);setSA(true);homeScroll.current=window.scrollY;saveRoute({t:"auth",m});window.history.pushState({t:"auth",m},"","#"+m);window.scrollTo(0,0);};
+  const closeAuth=()=>{setSA(false);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);window.scrollTo(0,0);};
+
+  // Browser Back/Forward: rebuild the view the entry describes. Without this the
+  // app ignored Back entirely and the visitor got dropped out of the site.
+  useEffect(()=>{
+    const onPop=(e)=>{
+      const st=e.state||{t:"home"};setMO(false);setPendCh(null);
+      if(st.t==="ch"){const f=chs.find(c=>String(c.id)===String(st.id)||dId(c.id)===String(st.id));
+        if(f){setSCh(f);setIP(null);setSA(false);setSAd(false);saveRoute({t:"ch",id:f.id});return;}}
+      if(st.t==="info"){setIP(st.p);setSCh(null);setSA(false);setSAd(false);return;}
+      if(st.t==="auth"){setAM(st.m||"login");setSA(true);setSCh(null);setIP(null);setSAd(false);return;}
+      if(st.t==="admin"){setSAd(true);setSCh(null);setIP(null);setSA(false);return;}
+      setSCh(null);setIP(null);setSA(false);setSAd(false);clearRoute();
+      // Restore the exact spot in the list they came from, after React repaints.
+      requestAnimationFrame(()=>window.scrollTo(0,homeScroll.current||0));
+    };
+    window.addEventListener("popstate",onPop);
+    return()=>window.removeEventListener("popstate",onPop);
+  },[chs]);
 
   useEffect(()=>{
     let vp=document.querySelector('meta[name="viewport"]');
@@ -378,6 +400,13 @@ export default function App(){
   useEffect(()=>{
     const s=loadAuth();if(s){setAuth(s);setSA(false);}
     const h=window.location.hash.replace("#","");
+    // Seed the first history entry with the view it actually shows, so landing on
+    // a shared link and pressing Forward/Back resolves to it instead of the home page.
+    window.history.replaceState(
+      /^\d{5}$/.test(h)?{t:"ch",id:h}
+      :["p053","p041","p072"].includes(h)?{t:"info",p:h}
+      :(h==="login"||h==="signup")?{t:"auth",m:h}
+      :{t:"home"},"",window.location.href);
     if(h){
       // Shared link - hash takes priority
       if(["p053","p041","p072"].includes(h)){setIP(h);}
