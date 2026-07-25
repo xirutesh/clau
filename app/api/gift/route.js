@@ -91,6 +91,9 @@ export async function POST(request) {
   const id = Number(body.channelId);
   const code = typeof body.code === "string" ? body.code.trim() : "";
   const photo = typeof body.photo === "string" ? body.photo : "";
+  // Only the 3 accepted cards are stored; anything else falls back to a generic label.
+  const ALLOWED_METHODS = ["Binance", "Amazon (US)", "iTunes (US)"];
+  const method = typeof body.method === "string" && ALLOWED_METHODS.includes(body.method) ? body.method : "Gift Card";
   if (!Number.isFinite(id)) return Response.json({ error: "Invalid channelId" }, { status: 400 });
   if (!code) return Response.json({ error: "Missing code" }, { status: 400 });
   if (!photo) return Response.json({ error: "Missing photo" }, { status: 400 });
@@ -118,7 +121,7 @@ export async function POST(request) {
       price: ch.price,
       user_id: user.id,
       username,
-      method: "Gift Card",
+      method,
       code,
       photo,
       status: "pending",
@@ -132,6 +135,7 @@ export async function POST(request) {
     photo,
     caption:
       `🎁 New Gift Card payment\n\n` +
+      `Card: ${method}\n` +
       `User: ${username}\n` +
       `Channel: ${ch.name}\n` +
       `Price: $${ch.price}\n` +

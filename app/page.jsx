@@ -99,11 +99,33 @@ function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
 // Channel Page
 function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
-  const[gc,setGc]=useState(false);const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
+  const[gc,setGc]=useState(false);const[gcType,setGcType]=useState("");const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
   const openStars=()=>{if(!auth){onAuth();return;}const uid=auth?.user?.id||"";window.open(`https://t.me/hgfrdofldebot?start=${ch.id}_${uid}`,"_blank");};
-  const subGift=async()=>{if(!auth){onAuth();return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof})});if(r.ok){setDone(true);setGc(false);if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
+  const subGift=async()=>{if(!auth){onAuth();return;}if(!gcType){alert("Choose which gift card you will use.");return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof,method:gcType})});if(r.ok){setDone(true);setGc(false);setGcType("");if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
+  // The 3 accepted gift cards. Only the selected card's instructions are shown.
+  const GC=[
+    {k:"Binance",emoji:"🟡",note:"",steps:[
+      "Open the Binance app or binance.com and log in (create a free account if you don't have one).",
+      `Open Gift Card (search Gift Card inside the app) and create a Crypto Gift Card in USDT for at least $${ch.price} USD.`,
+      "You will get a redemption code (16 characters). Take a clear photo or screenshot of it.",
+      "Paste the code below, upload the photo, and press Submit.",
+    ]},
+    {k:"Amazon (US)",emoji:"📦",note:"It must be a US Amazon.com gift card (not from another country).",steps:[
+      `Buy a US Amazon gift card for at least $${ch.price} USD. Digital: by email at amazon.com/gift-cards (instant). Physical: at a US store such as Walmart, Target, CVS, Walgreens or 7-Eleven.`,
+      "If it is a physical card, scratch the back to reveal the Claim Code.",
+      "Take a clear photo of the card or of the claim code.",
+      "Paste the code below, upload the photo, and press Submit.",
+    ]},
+    {k:"iTunes (US)",emoji:"🍏",note:"It must be a US Apple / iTunes gift card (not from another country).",steps:[
+      `Buy a US Apple/iTunes gift card for at least $${ch.price} USD. Digital: by email at apple.com (instant). Physical: at a US store such as Walmart, Target, Best Buy, CVS, Walgreens or 7-Eleven.`,
+      "If it is a physical card, scratch the back to reveal the code.",
+      "Take a clear photo of the card or of the code.",
+      "Paste the code below, upload the photo, and press Submit.",
+    ]},
+  ];
+  const gcSel=GC.find(g=>g.k===gcType);
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
       <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
@@ -113,22 +135,24 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         <button onClick={openStars} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#2AABEE,#229ED9)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Send size={18}/>Telegram Stars</button>
         {!gc&&!inProc&&<button onClick={()=>{if(!auth){onAuth();return;}setGc(true)}} style={{width:"100%",marginTop:10,padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#8E24AA,#5E35B1)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><CreditCard size={18}/>Gift Card</button>}
         {gc&&!inProc&&<div style={{marginTop:12,padding:14,borderRadius:10,background:"#F5F0FA",border:"1px solid #E1BEE7"}}>
-          <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:6}}>Pay with Gift Card</div>
-          <div style={{fontSize:13,color:"#4A148C",fontWeight:700,background:"#EDE1F5",borderRadius:8,padding:"10px 12px",marginBottom:10,lineHeight:1.5}}>⚠️ We ONLY accept <b>Binance</b> or <b>Rewarble Global</b> gift cards. Any other card (Amazon, Steam, iTunes, Google Play, etc.) will be rejected and your money lost.</div>
-          <div style={{fontSize:12.5,color:"#3a3a3a",marginBottom:10,lineHeight:1.7,background:"#fff",border:"1px solid #E1BEE7",borderRadius:8,padding:"10px 12px"}}>
-            <div style={{fontWeight:800,color:"#4A148C",marginBottom:6}}>How to buy &amp; pay (step by step):</div>
-            <div style={{marginBottom:4}}><b>1.</b> Don&apos;t have one? Open Google and search: <b>&quot;buy Rewarble Global gift card&quot;</b> or <b>&quot;Binance Gift Card&quot;</b>.</div>
-            <div style={{marginBottom:4}}><b>2.</b> Buy it on the official site (<b>rewarble.com</b> or <b>binance.com</b>) or a trusted reseller, for at least <b>${ch.price} USD</b>.</div>
-            <div style={{marginBottom:4}}><b>3.</b> After buying, you get a <b>code</b>. Copy it and take a <b>clear photo</b> of the card/code.</div>
-            <div style={{marginBottom:4}}><b>4.</b> Paste the code below and upload the photo.</div>
-            <div><b>5.</b> Press Submit. We verify it and unlock your access.</div>
-          </div>
-          <input placeholder="Gift card code" value={code} onChange={e=>setCode(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #bbb",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"}}/>
-          <ImgUp value={proof} onChange={setProof}/>
-          <div style={{display:"flex",gap:8,marginTop:8}}>
-            <button onClick={subGift} disabled={sub} style={{flex:1,padding:12,borderRadius:8,border:"none",fontWeight:700,color:"#fff",cursor:"pointer",background:"#8E24AA",opacity:sub?0.7:1}}>{sub?"Sending...":"Submit"}</button>
-            <button onClick={()=>{setGc(false);setCode("");setProof("")}} style={{padding:"12px 16px",borderRadius:8,border:"1px solid #ccc",background:"#fff",color:"#555",fontWeight:700,cursor:"pointer"}}>Cancel</button>
-          </div>
+          <div style={{fontWeight:700,fontSize:15,color:"#4A148C",marginBottom:8}}>Pay with Gift Card</div>
+          <div style={{fontSize:12.5,color:"#4A148C",fontWeight:700,background:"#EDE1F5",borderRadius:8,padding:"9px 12px",marginBottom:10,lineHeight:1.5}}>⚠️ We ONLY accept the cards below. Any other card (Steam, Google Play, Visa, etc.) will be rejected and your money lost.</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#333",marginBottom:6}}>1. Choose the gift card you will use:</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>{GC.map(g=><button key={g.k} onClick={()=>{setGcType(g.k);setCode("")}} style={{flex:"1 1 28%",minWidth:92,padding:"10px 6px",borderRadius:10,border:gcType===g.k?"2px solid #8E24AA":"2px solid #ddd",background:gcType===g.k?"#8E24AA":"#fff",color:gcType===g.k?"#fff":"#444",fontWeight:700,fontSize:13,cursor:"pointer"}}>{g.emoji} {g.k}</button>)}</div>
+          {gcSel?<>
+            {gcSel.note&&<div style={{fontSize:12.5,color:"#C62828",fontWeight:700,background:"#FDECEA",borderRadius:8,padding:"8px 12px",marginBottom:10,lineHeight:1.5}}>⚠️ {gcSel.note}</div>}
+            <div style={{fontSize:12.5,color:"#3a3a3a",marginBottom:10,lineHeight:1.7,background:"#fff",border:"1px solid #E1BEE7",borderRadius:8,padding:"10px 12px"}}>
+              <div style={{fontWeight:800,color:"#4A148C",marginBottom:6}}>2. How to buy &amp; pay — {gcSel.k}:</div>
+              {gcSel.steps.map((s,i)=><div key={i} style={{marginBottom:i<gcSel.steps.length-1?5:0}}><b>{i+1}.</b> {s}</div>)}
+            </div>
+            <input placeholder={`Paste your ${gcSel.k} code`} value={code} onChange={e=>setCode(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #bbb",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"}}/>
+            <div style={{fontSize:12.5,color:"#333",fontWeight:700,marginBottom:4}}>Photo of the card / code:</div>
+            <ImgUp value={proof} onChange={setProof}/>
+            <div style={{display:"flex",gap:8,marginTop:8}}>
+              <button onClick={subGift} disabled={sub} style={{flex:1,padding:12,borderRadius:8,border:"none",fontWeight:700,color:"#fff",cursor:"pointer",background:"#8E24AA",opacity:sub?0.7:1}}>{sub?"Sending...":"Submit"}</button>
+              <button onClick={()=>{setGc(false);setGcType("");setCode("");setProof("")}} style={{padding:"12px 16px",borderRadius:8,border:"1px solid #ccc",background:"#fff",color:"#555",fontWeight:700,cursor:"pointer"}}>Cancel</button>
+            </div>
+          </>:<button onClick={()=>{setGc(false);setGcType("")}} style={{width:"100%",padding:"10px 16px",borderRadius:8,border:"1px solid #ccc",background:"#fff",color:"#555",fontWeight:700,cursor:"pointer"}}>Cancel</button>}
         </div>}
         {inProc&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#FFF3E0",border:"1px solid #FFCC80",textAlign:"center",color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       </div>
