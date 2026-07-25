@@ -245,18 +245,20 @@ function Auth({onLogin,onBack,defaultMode}){
       setOk("Account created! Log in.");setMode("login");setBusy(false);return;
     }else{const email=fakeEmail(user);const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"apikey":SB_ANON,"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})}).catch(()=>null);if(!r){setErr("Unable to connect.");setBusy(false);return;}const d=await r.json();if(r.status>=400){if(r.status>=500)setErr("Server error. Try again later.");else setErr("Invalid username or password.");setBusy(false);return;}const p=await api.getOne("profiles",`id=eq.${d.user.id}&select=*`,d.access_token);const uname=p?.username||user;const a={token:d.access_token,refresh:d.refresh_token,user:d.user,role:p?.role||"user",username:uname};saveAuth(a);onLogin(a);}setBusy(false);};
   return<div style={{minHeight:"100dvh",background:"#e8e8e8"}}><style>{`@keyframes authDrop{from{transform:translateY(-300px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style><div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}><ArrowLeft size={22} color="#fff" style={{cursor:"pointer"}} onClick={onBack}/><span style={{color:"#fff",fontWeight:900,fontSize:18}}>{mode==="login"?"Authorization":"Registration"}</span></div><div style={{padding:"20px 16px",display:"flex",justifyContent:"center"}}><div key={mode} style={{background:"#f5f5f5",borderRadius:4,padding:"24px 20px",width:"100%",maxWidth:360,border:"1px solid #ddd",animation:"authDrop 1.4s cubic-bezier(0.16,1,0.3,1)"}}>
-    <input placeholder="username" value={user} onChange={e=>{setUser(e.target.value);setErr("")}} style={inp}/>
-    <input placeholder="password" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&mode==="login"&&go()}/>
-    {mode==="signup"&&<input placeholder="password check" type="password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr("")}} style={inp} onKeyDown={e=>e.key==="Enter"&&go()}/>}
+    <form onSubmit={e=>{e.preventDefault();go();}} autoComplete="on">
+    <input placeholder="username" name="username" autoComplete="username" value={user} onChange={e=>{setUser(e.target.value);setErr("")}} style={inp}/>
+    <input placeholder="password" name="password" type="password" autoComplete={mode==="login"?"current-password":"new-password"} value={pass} onChange={e=>{setPass(e.target.value);setErr("")}} style={inp}/>
+    {mode==="signup"&&<input placeholder="password check" name="password2" type="password" autoComplete="new-password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr("")}} style={inp}/>}
     {ok&&<div style={{color:"#27ae60",fontSize:13,marginBottom:10,textAlign:"center",background:"#E8F5E9",padding:"8px 12px",borderRadius:4,fontWeight:600}}>{ok}</div>}
     {err&&<div style={{color:R,fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
     {mode==="login"?<>
-      <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:G,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Authorization"}</button>
-      <button onClick={()=>{setMode("signup");setErr("");try{window.history.replaceState({t:"auth",m:"signup"},"","#signup")}catch{}}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
+      <button type="submit" disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:G,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Authorization"}</button>
+      <button type="button" onClick={()=>{setMode("signup");setErr("");try{window.history.replaceState({t:"auth",m:"signup"},"","#signup")}catch{}}} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>Registration</button>
     </>:<>
-      <button onClick={go} disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Registration"}</button>
+      <button type="submit" disabled={busy} style={{width:"100%",padding:12,borderRadius:4,border:"none",background:"#4A90D9",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8,opacity:busy?0.7:1}}>{busy?"Loading...":"Registration"}</button>
       <div style={{textAlign:"center",marginTop:8,fontSize:13,color:"#888"}}>Already have an account? <span onClick={()=>{setMode("login");setErr("");try{window.history.replaceState({t:"auth",m:"login"},"","#login")}catch{}}} style={{color:G,fontWeight:700,cursor:"pointer"}}>Login</span></div>
     </>}
+    </form>
   </div></div></div>;
 }
 
