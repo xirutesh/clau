@@ -82,6 +82,9 @@ function ImgUp({value,onChange,watermark}){
 // Shimmer skeleton block — the building piece of the loading "preview" screens.
 function Sk({w,h,r=8,style}){return<div style={{width:w,height:h,borderRadius:r,background:"linear-gradient(90deg,#e9e9e9 25%,#f4f4f4 37%,#e9e9e9 63%)",backgroundSize:"400% 100%",animation:"shimmer 1.4s ease infinite",...style}}/>;}
 
+// Grid of skeleton video cards (same 16:9 shape as VT) for the section previews.
+function SkCards({cols,n}){return<div style={{display:"grid",gridTemplateColumns:cols,gap:16}}>{Array.from({length:n}).map((_,i)=><div key={i}><div style={{position:"relative",paddingTop:"56.25%",borderRadius:10,overflow:"hidden"}}><Sk w="100%" h="100%" r={10} style={{position:"absolute",inset:0}}/></div><Sk w="60%" h={12} style={{marginTop:8}}/></div>)}</div>;}
+
 // Loading preview of a product page: same shape as ChPage, so an F5 inside a
 // product shows a greyed-out version of THAT page (not a blank/generic spinner).
 function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
@@ -498,9 +501,12 @@ export default function App(){
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
   return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
-    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;-webkit-text-size-adjust:100%;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;max-height:none;touch-action:manipulation;}`}</style>
+    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;-webkit-text-size-adjust:100%;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}@keyframes ldbar{0%{left:-40%}50%{left:30%}100%{left:110%}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;max-height:none;touch-action:manipulation;}`}</style>
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>UflashBrazil.TV</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
+
+    {!ready&&<div style={{position:"fixed",top:0,left:0,right:0,height:3,background:`${R}22`,zIndex:3000,overflow:"hidden"}}><div style={{position:"absolute",top:0,bottom:0,width:"40%",background:R,animation:"ldbar 1.05s ease-in-out infinite"}}/></div>}
+    {!ready&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"8px 0",background:"#fff",color:R,fontWeight:700,fontSize:13,borderBottom:"1px solid #eee"}}><div style={{width:14,height:14,border:"2px solid #f0c9c9",borderTop:`2px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>Loading…</div>}
 
     <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
 
@@ -513,7 +519,13 @@ export default function App(){
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
         <SC label="Users" value={usersTotal} sub="new Users (annual)" change={`+${usersAnnual}`} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
-      {!ready&&<div style={{padding:pad}}><div style={{textAlign:"center",marginBottom:20}}><Sk w={240} h={38} r={30} style={{margin:"0 auto"}}/></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{Array.from({length:scr.mobile?2:6}).map((_,i)=><div key={i}><div style={{position:"relative",paddingTop:"56.25%",borderRadius:10,overflow:"hidden"}}><Sk w="100%" h="100%" r={10} style={{position:"absolute",inset:0}}/></div><Sk w="60%" h={12} style={{marginTop:8}}/></div>)}</div></div>}
+      {!ready&&<>
+        <div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{[110,80,140,95,120].map((w,i)=><Sk key={i} w={w} h={38} r={30}/>)}</div></div>
+        <div style={{height:3,background:G}}/>
+        <div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tV.title}</span></div><SkCards cols={scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr"} n={scr.mobile?2:3}/></div>
+        <div style={{height:3,background:G}}/>
+        <div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><SkCards cols={scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr"} n={scr.mobile?2:3}/></div>
+      </>}
 
       {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
 
