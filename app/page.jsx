@@ -116,7 +116,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         {inProc&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#FFF3E0",border:"1px solid #FFCC80",textAlign:"center",color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       </div>
     </div></div>
-    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{ch.video_count>0?`VIDEO COUNT: ${ch.video_count}`:"ALREADY SHOWN IN THE PHOTO"}</div></div></div>
+    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT: ${ch.video_count>0?ch.video_count:"ALREADY SHOWN IN THE UflashBrazil.TV"}`}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
@@ -451,7 +451,7 @@ export default function App(){
   if(!mounted)return<div style={{minHeight:"100dvh",background:"#f2f2f2",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}><LI src={null} size={40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:20,letterSpacing:1}}>UflashBrazil.TV</div><div style={{color:"#ffffffbb",fontSize:10}}>For All Your Pleasures</div></div></div>
-    <div style={{display:"flex",justifyContent:"center",padding:"90px 0"}}><div style={{width:46,height:46,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/></div>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"90px 0",gap:16}}><div style={{width:46,height:46,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/><div style={{color:"#888",fontSize:14,fontWeight:600}}>Loading…</div></div>
   </div>;
 
   if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();openAuth("login");}}/>;
@@ -492,14 +492,14 @@ export default function App(){
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")} pendingSub={mySubs.some(s=>String(s.channel_id)===String(sCh.id)&&s.status==="pending")} onSubmitted={refreshMySubs}/></div>
-    :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/></div></div>
+    :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/><div style={{color:"#888",fontSize:14,fontWeight:600,marginTop:16}}>Loading…</div></div></div>
     :<>
       {hasPending&&<div style={{margin:pad,padding:"12px 16px",background:"#FFF3E0",border:"1px solid #FFCC80",borderRadius:10,color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.mobile?"1fr":"1fr 1fr",gap:12}}>
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
         <SC label="Users" value={usersTotal} sub="new Users (annual)" change={`+${usersAnnual}`} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
-      {!ready&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{width:36,height:36,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto"}}/></div>}
+      {!ready&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{width:36,height:36,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto"}}/><div style={{color:"#888",fontSize:14,fontWeight:600,marginTop:12}}>Loading products…</div></div>}
 
       {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
 
