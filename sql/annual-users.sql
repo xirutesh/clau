@@ -1,5 +1,5 @@
 -- ============================================================================
--- XIRUTE.COM — Contador anual de usuarios automatico.
+-- UflashBrazil.TV — Contador anual de usuarios automatico.
 -- Ejecutar en el SQL Editor de Supabase. Idempotente.
 --
 -- Como funciona:

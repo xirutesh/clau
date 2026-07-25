@@ -1,5 +1,5 @@
 -- ============================================================================
--- XIRUTE.COM — Tabla de pagos manuales (Gift Card). Ejecutar en el SQL Editor.
+-- UflashBrazil.TV — Tabla de pagos manuales (Gift Card). Ejecutar en el SQL Editor.
 -- Idempotente. RLS ON sin políticas: solo la service role (proxy / /api/gift)
 -- puede leer/escribir. anon/authenticated quedan denegados por defecto.
 -- ============================================================================

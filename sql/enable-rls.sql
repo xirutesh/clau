@@ -1,5 +1,5 @@
 -- ============================================================================
--- XIRUTE.COM — Activar RLS con políticas (TODAS las tablas)
+-- UflashBrazil.TV — Activar RLS con políticas (TODAS las tablas)
 -- Ejecutar TODO en el SQL Editor de Supabase. Es idempotente (se puede repetir).
 --
 -- Contexto (verificado contra el código de app/page.jsx y app/api/db):
