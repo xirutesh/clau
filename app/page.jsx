@@ -490,6 +490,18 @@ export default function App(){
     vp.setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
   },[]);
 
+  // Keep the session alive: Supabase access tokens expire (~1h). Renew from the
+  // stored refresh token on load and every 45 min, so a logged-in user stays logged
+  // in and doesn't have to sign in again and again. On failure we keep the current
+  // session (don't force a logout on a transient error).
+  useEffect(()=>{
+    let alive=true;
+    const renew=async()=>{const s=loadAuth();if(!s?.refresh)return;const ok=await api.refreshToken();if(ok&&alive){const ns=loadAuth();if(ns)setAuth(ns);}};
+    renew();
+    const id=setInterval(renew,45*60*1000);
+    return()=>{alive=false;clearInterval(id);};
+  },[]);
+
   // Mount: restore from URL hash (shared links) OR localStorage (F5)
   useEffect(()=>{
     const s=loadAuth();if(s){setAuth(s);setSA(false);}
