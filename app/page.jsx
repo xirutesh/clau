@@ -79,6 +79,20 @@ function ImgUp({value,onChange,watermark}){
   return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:watermark?260:120,height:watermark?146:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
 }
 
+// Shimmer skeleton block — the building piece of the loading "preview" screens.
+function Sk({w,h,r=8,style}){return<div style={{width:w,height:h,borderRadius:r,background:"linear-gradient(90deg,#e9e9e9 25%,#f4f4f4 37%,#e9e9e9 63%)",backgroundSize:"400% 100%",animation:"shimmer 1.4s ease infinite",...style}}/>;}
+
+// Loading preview of a product page: same shape as ChPage, so an F5 inside a
+// product shows a greyed-out version of THAT page (not a blank/generic spinner).
+function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
+  <div style={{padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
+    <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><Sk w={90} h={16} r={6} style={{margin:"0 auto",background:"rgba(255,255,255,0.55)"}}/><div style={{width:85,height:85,borderRadius:"50%",background:"rgba(255,255,255,0.6)",margin:"16px auto 0"}}/></div>
+    <div style={{padding:"16px 20px 20px"}}><Sk w={120} h={18} style={{margin:"0 auto 8px"}}/><Sk w={180} h={14} style={{margin:"0 auto 20px"}}/><Sk w="100%" h={48} r={10} style={{marginBottom:10}}/><Sk w="100%" h={48} r={10} style={{marginBottom:10}}/><Sk w="100%" h={48} r={10}/></div>
+  </div></div>
+  <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",display:"flex",justifyContent:"center"}}><Sk w={220} h={16}/></div></div>
+  <div style={{padding:"8px 16px 24px"}}><div style={{position:"relative",paddingTop:"56.25%",borderRadius:10,overflow:"hidden"}}><Sk w="100%" h="100%" r={10} style={{position:"absolute",inset:0}}/></div></div>
+</div>;}
+
 // Channel Page
 function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
@@ -484,7 +498,7 @@ export default function App(){
   const pad=scr.desktop?"20px 60px":scr.tablet?"16px 30px":"14px 16px";
 
   return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
-    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;-webkit-text-size-adjust:100%;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;max-height:none;touch-action:manipulation;}`}</style>
+    <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;-webkit-text-size-adjust:100%;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;max-height:none;touch-action:manipulation;}`}</style>
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
     <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>UflashBrazil.TV</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
@@ -492,14 +506,14 @@ export default function App(){
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")} pendingSub={mySubs.some(s=>String(s.channel_id)===String(sCh.id)&&s.status==="pending")} onSubmitted={refreshMySubs}/></div>
-    :waiting?<div style={{maxWidth:650,margin:"0 auto",padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)",padding:40,textAlign:"center"}}><Spin/><div style={{color:"#888",fontSize:14,fontWeight:600,marginTop:16}}>Loading…</div></div></div>
+    :waiting?<ChSkel/>
     :<>
       {hasPending&&<div style={{margin:pad,padding:"12px 16px",background:"#FFF3E0",border:"1px solid #FFCC80",borderRadius:10,color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       <div style={{padding:pad,display:"grid",gridTemplateColumns:scr.mobile?"1fr":"1fr 1fr",gap:12}}>
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
         <SC label="Users" value={usersTotal} sub="new Users (annual)" change={`+${usersAnnual}`} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
-      {!ready&&<div style={{textAlign:"center",padding:"30px 0"}}><div style={{width:36,height:36,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto"}}/><div style={{color:"#888",fontSize:14,fontWeight:600,marginTop:12}}>Loading products…</div></div>}
+      {!ready&&<div style={{padding:pad}}><div style={{textAlign:"center",marginBottom:20}}><Sk w={240} h={38} r={30} style={{margin:"0 auto"}}/></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{Array.from({length:scr.mobile?2:6}).map((_,i)=><div key={i}><div style={{position:"relative",paddingTop:"56.25%",borderRadius:10,overflow:"hidden"}}><Sk w="100%" h="100%" r={10} style={{position:"absolute",inset:0}}/></div><Sk w="60%" h={12} style={{marginTop:8}}/></div>)}</div></div>}
 
       {tS.visible!==false&&chs.filter(c=>c.top_selling).length>0&&<><div style={{padding:scr.desktop?"30px 60px":"24px 16px",background:"#fafafa",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{tS.title}</span></div><div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>{chs.filter(c=>c.top_selling).map((ch,i)=>{const c=tagC[i%tagC.length];return<span key={ch.id} onClick={()=>navCh(ch)} style={{background:c.bg,color:c.t,padding:scr.desktop?"10px 22px":"8px 18px",borderRadius:30,fontWeight:700,fontSize:scr.desktop?14:13,cursor:"pointer"}}>{ch.name}</span>})}</div></div><div style={{height:3,background:G}}/></>}
 
