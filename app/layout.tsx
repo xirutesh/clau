@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XIRUTE.COM — For All Your Pleasures",
-  description: "XIRUTE.COM — Premium Content Platform",
+  title: "UflashBrazil.TV — For All Your Pleasures",
+  description: "UflashBrazil.TV — Premium Content Platform",
 };
 
 export const viewport: Viewport = {

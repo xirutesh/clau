@@ -53,7 +53,7 @@ export async function POST(request) {
   const status = String(data.payment_status || "");
   if (isOurs && (status === "finished" || status === "confirmed" || status === "partially_paid")) {
     await notify(
-      `💰 XIRUTE — New crypto sale!\n\n` +
+      `💰 UflashBrazil.TV — New crypto sale!\n\n` +
       `${data.order_description || data.order_id || ""}\n` +
       `Amount: $${data.price_amount} ${String(data.price_currency || "").toUpperCase()}\n` +
       `Paid: ${data.actually_paid || data.pay_amount} ${String(data.pay_currency || "").toUpperCase()}\n` +

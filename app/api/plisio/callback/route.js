@@ -61,7 +61,7 @@ export async function POST(request) {
 
   if (isOurs && status === "completed") {
     await notify(
-      `💰 XIRUTE — New crypto sale!\n\n` +
+      `💰 UflashBrazil.TV — New crypto sale!\n\n` +
         `${data.order_name || data.order_number || ""}\n` +
         `Amount: $${data.source_amount || "?"} ${String(data.source_currency || "USD").toUpperCase()}\n` +
         `Paid: ${data.amount || "?"} ${String(data.currency || "").toUpperCase()}\n` +

@@ -24,6 +24,9 @@ async function plisioInvoice(ch, orderNumber) {
     order_number: orderNumber,
     source_currency: "USD",
     source_amount: String(ch.price),
+    // Sending an email skips Plisio's "enter your email" step for the buyer.
+    // Accounts here use throwaway @siteusers.com addresses, so a no-reply is enough.
+    email: "noreply@uflashbrazil.tv",
     callback_url: `${SITE_URL}/api/plisio/callback?json=true`,
     success_invoice_url: SITE_URL,
     fail_invoice_url: SITE_URL,

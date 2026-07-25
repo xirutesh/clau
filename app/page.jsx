@@ -10,7 +10,7 @@ const G="#E5A816",R="#C0392B",PK="#F06292";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
-const defCfg={site_name:"XIRUTE.COM",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+345",fake_users_annual_year:null,stars_per_usd:50};
+const defCfg={site_name:"UflashBrazil.TV",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+345",fake_users_annual_year:null,stars_per_usd:50};
 
 function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
 
@@ -56,7 +56,7 @@ function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{backg
 
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#555",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
-// Baked-in watermark: tiled "www.xirute.com" in diagonal, low opacity. Survives download/screenshot.
+// Baked-in watermark: tiled "www.uflashbrazil.tv" in diagonal, low opacity. Survives download/screenshot.
 // 4 corner watermarks (top-left, top-right, bottom-left, bottom-right). Subtle, not tiled.
 function stampWatermark(ctx,w,h){
   ctx.save();
@@ -66,7 +66,7 @@ function stampWatermark(ctx,w,h){
   const fs=Math.max(13,Math.round(w/24));
   ctx.font=`bold ${fs}px Arial, sans-serif`;
   ctx.textBaseline="middle";
-  const t="www.xirute.com",m=Math.round(fs*0.8),ty=m+fs/2,by=h-m-fs/2;
+  const t="www.uflashbrazil.tv",m=Math.round(fs*0.8),ty=m+fs/2,by=h-m-fs/2;
   ctx.textAlign="left";ctx.fillText(t,m,ty);ctx.fillText(t,m,by);
   ctx.textAlign="right";ctx.fillText(t,w-m,ty);ctx.fillText(t,w-m,by);
   ctx.restore();
@@ -150,8 +150,8 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
 // Info Pages
 function InfoP({page,config}){
   if(page==="p053")return<div style={{background:"#fff",borderRadius:12,padding:20,margin:16,textAlign:"center"}}><div style={{fontSize:48,marginBottom:12}}>✈️</div><div style={{fontWeight:800,fontSize:20,marginBottom:8,color:"#1a1a1a"}}>Join Our Telegram</div><p style={{color:"#444",fontSize:14,lineHeight:1.6,marginBottom:20}}>Stay updated with the latest content.</p><a href={config?.telegram_link||"#"} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"14px 32px",borderRadius:10,background:"#0088cc",color:"#fff",fontWeight:700,fontSize:16,textDecoration:"none"}}>Open Telegram</a></div>;
-  if(page==="p041")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>18 USC 2257</span></div><div style={{padding:"16px 0",fontSize:15,color:"#444",lineHeight:1.7}}><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL PICTURES ARE PRESENTED BY THIRD PARTIES.</p><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL MODELS ARE 18 YEARS OF AGE OR OLDER IN COMPLIANCE WITH 18 USC 2257</p><p style={{fontWeight:600,fontStyle:"italic"}}>All visitors of this website are required to be over 18 years old (over 21 in some locations).</p><div style={{background:"#FFF3E0",borderRadius:10,padding:14,marginTop:16,textAlign:"center"}}><a href="mailto:legal-website@xirute.com" style={{color:"#E65100",fontWeight:700,fontSize:16,textDecoration:"none"}}>legal-website@xirute.com</a></div></div></div>;
-  if(page==="p072")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>Content Removal</span></div><div style={{padding:"16px 0",fontSize:14,color:"#444",lineHeight:1.8}}><p style={{marginBottom:12}}>If you appear in any content and wish to have it removed, submit a removal request.</p><div style={{background:"#E8F5E9",borderRadius:10,padding:14,textAlign:"center"}}><a href="mailto:removal-website@xirute.com" style={{color:"#2E7D32",fontWeight:800,fontSize:17,textDecoration:"none"}}>removal-website@xirute.com</a></div></div></div>;
+  if(page==="p041")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>18 USC 2257</span></div><div style={{padding:"16px 0",fontSize:15,color:"#444",lineHeight:1.7}}><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL PICTURES ARE PRESENTED BY THIRD PARTIES.</p><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL MODELS ARE 18 YEARS OF AGE OR OLDER IN COMPLIANCE WITH 18 USC 2257</p><p style={{fontWeight:600,fontStyle:"italic"}}>All visitors of this website are required to be over 18 years old (over 21 in some locations).</p><div style={{background:"#FFF3E0",borderRadius:10,padding:14,marginTop:16,textAlign:"center"}}><a href="mailto:legal-website@uflashbrazil.tv" style={{color:"#E65100",fontWeight:700,fontSize:16,textDecoration:"none"}}>legal-website@uflashbrazil.tv</a></div></div></div>;
+  if(page==="p072")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>Content Removal</span></div><div style={{padding:"16px 0",fontSize:14,color:"#444",lineHeight:1.8}}><p style={{marginBottom:12}}>If you appear in any content and wish to have it removed, submit a removal request.</p><div style={{background:"#E8F5E9",borderRadius:10,padding:14,textAlign:"center"}}><a href="mailto:removal-website@uflashbrazil.tv" style={{color:"#2E7D32",fontWeight:800,fontSize:17,textDecoration:"none"}}>removal-website@uflashbrazil.tv</a></div></div></div>;
   return null;
 }
 
@@ -450,7 +450,7 @@ export default function App(){
 
   if(!mounted)return<div style={{minHeight:"100dvh",background:"#f2f2f2",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}><LI src={null} size={40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:10}}>For All Your Pleasures</div></div></div>
+    <div style={{background:G,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}><LI src={null} size={40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:20,letterSpacing:1}}>UflashBrazil.TV</div><div style={{color:"#ffffffbb",fontSize:10}}>For All Your Pleasures</div></div></div>
     <div style={{display:"flex",justifyContent:"center",padding:"90px 0"}}><div style={{width:46,height:46,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/></div>
   </div>;
 
@@ -486,7 +486,7 @@ export default function App(){
   return<div onContextMenu={e=>{if(e.target.tagName==="IMG"||e.target.style?.backgroundImage)e.preventDefault()}} style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#f2f2f2"}}>
     <style>{`html,body{background:#f2f2f2!important;margin:0;padding:0;-webkit-text-size-adjust:100%;}img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;}@keyframes spin{to{transform:rotate(360deg)}}::placeholder{color:#999!important;opacity:1!important;}input,textarea,select{color:#333!important;font-size:16px!important;max-height:none;touch-action:manipulation;}`}</style>
     <style>{`img{-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;}div[style*="background:url"],div[style*="background: url"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}`}</style>
-    <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>XIRUTE.COM</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
+    <div style={{background:G,padding:scr.desktop?"16px 60px":"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}} onClick={()=>navHome()}><LI src={cfg.logo_url} size={scr.desktop?48:40}/><div><div style={{color:"#fff",fontWeight:900,fontSize:scr.desktop?26:20,letterSpacing:1}}>UflashBrazil.TV</div><div style={{color:"#ffffffbb",fontSize:scr.desktop?12:10}}>For All Your Pleasures</div></div></div>{mO?<X size={28} color="#FFD54F" style={{cursor:"pointer"}} onClick={()=>setMO(false)}/>:<Menu size={28} color="#fff" style={{cursor:"pointer"}} onClick={()=>setMO(true)}/>}</div>
 
     <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
 
@@ -507,7 +507,7 @@ export default function App(){
 
       {la.visible!==false&&chs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
 
-      <div style={{background:G,padding:"20px 16px",textAlign:"center",color:"#fff",fontSize:12}}>© 2026 XIRUTE.COM — All Rights Reserved</div>
+      <div style={{background:G,padding:"20px 16px",textAlign:"center",color:"#fff",fontSize:12}}>© 2026 UflashBrazil.TV — All Rights Reserved</div>
     </>}
   </div>;
 }
