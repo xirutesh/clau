@@ -200,11 +200,21 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
 }
 
 // Info Pages
+// On-site support ticket form (used on the info/legal pages). No login required;
+// posts to /api/ticket, which stores it and pings the owner on Telegram.
+function TicketForm({type}){
+  const[contact,setContact]=useState("");const[msg,setMsg]=useState("");const[sending,setSending]=useState(false);const[done,setDone]=useState(false);
+  const submit=async()=>{if(msg.trim().length<10){alert("Please describe your request (at least 10 characters).");return;}setSending(true);try{const r=await fetch("/api/ticket",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type,contact:contact.trim(),message:msg.trim()})});if(r.ok){setDone(true);}else{const d=await r.json().catch(()=>({}));alert(d.error||"Could not send. Please try again.");}}catch{alert("Could not send. Please try again.");}setSending(false);};
+  if(done)return<div style={{background:"#E8F5E9",borderRadius:10,padding:16,textAlign:"center",color:"#2E7D32",fontWeight:700}}>Your ticket was submitted. We&apos;ll review it shortly.</div>;
+  const inp={width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #ccc",fontSize:16,marginBottom:10,boxSizing:"border-box",color:"#333",background:"#fff"};
+  return<div><input placeholder="Your email or Telegram (so we can reply)" value={contact} onChange={e=>setContact(e.target.value)} style={inp}/><textarea placeholder="Describe your request..." value={msg} onChange={e=>setMsg(e.target.value)} style={{...inp,minHeight:100,resize:"vertical"}}/><button onClick={submit} disabled={sending} style={{width:"100%",padding:13,borderRadius:10,border:"none",background:G,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",opacity:sending?0.7:1}}>{sending?"Sending...":"Submit Ticket"}</button></div>;
+}
+
 function InfoP({page,config}){
   const TG="https://t.me/uflashbrazilofficial";
   if(page==="p053")return<div style={{background:"#fff",borderRadius:12,padding:20,margin:16,textAlign:"center"}}><div style={{fontSize:48,marginBottom:12}}>✈️</div><div style={{fontWeight:800,fontSize:20,marginBottom:8,color:"#1a1a1a"}}>Contact Us on Telegram</div><p style={{color:"#444",fontSize:14,lineHeight:1.6,marginBottom:20}}>Have a question or need help? Message us directly on Telegram — we usually reply fast.</p><a href={TG} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"14px 32px",borderRadius:10,background:"#229ED9",color:"#fff",fontWeight:700,fontSize:16,textDecoration:"none"}}>Message @uflashbrazilofficial</a></div>;
-  if(page==="p041")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>18 USC 2257</span></div><div style={{padding:"16px 0",fontSize:15,color:"#444",lineHeight:1.7}}><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL PICTURES ARE PRESENTED BY THIRD PARTIES.</p><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL MODELS ARE 18 YEARS OF AGE OR OLDER IN COMPLIANCE WITH 18 USC 2257</p><p style={{fontWeight:600,fontStyle:"italic"}}>All visitors of this website are required to be over 18 years old (over 21 in some locations).</p><div style={{background:"#FFF3E0",borderRadius:10,padding:14,marginTop:16,textAlign:"center"}}><p style={{margin:"0 0 10px",fontSize:14,color:"#444"}}>For any legal question, open a support ticket on Telegram:</p><a href={TG} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"12px 26px",borderRadius:10,background:"#229ED9",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}>Open a Ticket on Telegram</a></div></div></div>;
-  if(page==="p072")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>Content Removal</span></div><div style={{padding:"16px 0",fontSize:14,color:"#444",lineHeight:1.8}}><p style={{marginBottom:12}}>If you appear in any content and wish to have it removed, submit a removal request.</p><div style={{background:"#E8F5E9",borderRadius:10,padding:14,textAlign:"center"}}><p style={{margin:"0 0 10px",fontSize:14,color:"#444"}}>To request removal, open a support ticket on Telegram:</p><a href={TG} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"12px 26px",borderRadius:10,background:"#229ED9",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}>Open a Ticket on Telegram</a></div></div></div>;
+  if(page==="p041")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>18 USC 2257</span></div><div style={{padding:"16px 0",fontSize:15,color:"#444",lineHeight:1.7}}><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL PICTURES ARE PRESENTED BY THIRD PARTIES.</p><p style={{marginBottom:14,textTransform:"uppercase",fontWeight:600}}>ALL MODELS ARE 18 YEARS OF AGE OR OLDER IN COMPLIANCE WITH 18 USC 2257</p><p style={{fontWeight:600,fontStyle:"italic"}}>All visitors of this website are required to be over 18 years old (over 21 in some locations).</p><div style={{background:"#FFF3E0",borderRadius:10,padding:14,marginTop:16}}><div style={{fontWeight:700,fontSize:14,color:"#333",marginBottom:10}}>For any legal question, open a ticket:</div><TicketForm type="legal"/></div></div></div>;
+  if(page==="p072")return<div style={{margin:"0 16px"}}><div style={{borderTop:"1px solid #ddd"}}/><div style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}><span style={{fontWeight:700,fontSize:16}}>Content Removal</span></div><div style={{padding:"16px 0",fontSize:14,color:"#444",lineHeight:1.8}}><p style={{marginBottom:12}}>If you appear in any content and wish to have it removed, submit a removal request.</p><div style={{background:"#E8F5E9",borderRadius:10,padding:14}}><div style={{fontWeight:700,fontSize:14,color:"#333",marginBottom:10}}>To request removal, open a ticket:</div><TicketForm type="removal"/></div></div></div>;
   return null;
 }
 
@@ -284,14 +294,14 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");
-  const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
+  const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
   const rawH=Array.isArray(config?.sections)?config.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
   const homeSecs=[eS("latest","Latest Updates")];
 
-  useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);});api.aGet("gift_submissions","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setSubs(d);})},[]);
+  useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);});api.aGet("gift_submissions","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setSubs(d);});api.aGet("tickets","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setTickets(d);})},[]);
 
   const saveCh=async()=>{if(!form.name)return;setSav(true);
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
@@ -309,6 +319,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
   const acceptSub=async(s)=>{const chObj=channels.find(c=>String(c.id)===String(s.channel_id));const link=chObj?.delivery_link||config?.global_delivery_link||"";if(s.user_id&&link)await api.aPatch("profiles",`id=eq.${s.user_id}`,{delivery_link:link});await api.aPatch("gift_submissions",`id=eq.${s.id}`,{status:"accepted"});setSubs(x=>x.map(v=>v.id===s.id?{...v,status:"accepted"}:v));notify(link?`✅ Accepted & delivered to ${s.username||"user"}`:"✅ Accepted (set a delivery link on the channel)");};
   const rejectSub=async(s)=>{await api.aPatch("gift_submissions",`id=eq.${s.id}`,{status:"rejected"});setSubs(x=>x.map(v=>v.id===s.id?{...v,status:"rejected"}:v));notify("❌ Rejected");};
+  const toggleTicket=async(t)=>{const ns=t.status==="closed"?"open":"closed";await api.aPatch("tickets",`id=eq.${t.id}`,{status:ns});setTickets(x=>x.map(v=>v.id===t.id?{...v,status:ns}:v));};
+  const delTicket=async(t)=>{await api.aDel("tickets",`id=eq.${t.id}`);setTickets(x=>x.filter(v=>v.id!==t.id));notify("🗑 Ticket deleted");};
   const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
   const allS=channels.length>0&&sel.size===channels.length;
 
@@ -320,7 +332,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const fUsers=config?.fake_users??345;
   const fUA=config?.fake_users_annual??"+345";
 
-  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
+  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"tickets",l:"Tickets",i:<Info size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
   const chForm=<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
     <input placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}/>
     <textarea placeholder="Description (shown when user clicks the product)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{...inp,minHeight:50,resize:"vertical"}}/>
@@ -340,6 +352,18 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     {toast&&<Toast key={toast.k} msg={toast.msg} type={toast.type} onDone={()=>setToast(null)}/>}
     <div style={{background:"#1a1a1a",color:"#fff",padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><Settings size={20} color={G}/><span style={{fontWeight:800,fontSize:16}}>Admin</span></div><div style={{display:"flex",gap:8}}><button onClick={()=>{onClose();if(typeof onLogout==="function")onLogout()}} style={{background:"#555",color:"#fff",border:"none",padding:"6px 12px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4}}><LogOut size={12}/>Sign Out</button><button onClick={onClose} style={{background:G,color:"#fff",border:"none",padding:"6px 16px",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13}}>← Site</button></div></div>
     <div style={{display:"flex",background:"#fff",borderBottom:"2px solid #eee",overflowX:"auto"}}>{tabs.map(t=><button key={t.k} onClick={()=>{setTab(t.k);if(t.k==="channels"){setECh(null);setForm(defF())}}} style={{flex:1,minWidth:50,padding:"10px 0",border:"none",cursor:"pointer",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:3,background:tab===t.k?G:"#fff",color:tab===t.k?"#fff":"#777"}}>{t.i}{t.l}</button>)}</div>
+
+    {tab==="tickets"&&<div style={{padding:16}}>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:12,color:"#1a1a1a"}}>🎫 Tickets ({tickets.filter(t=>t.status!=="closed").length} open)</div>
+      {tickets.length===0&&<div style={{color:"#777",fontSize:14}}>No tickets yet.</div>}
+      {tickets.map(t=><div key={t.id} style={{background:"#fff",borderRadius:10,padding:14,marginBottom:10,border:"1px solid #eee",opacity:t.status==="closed"?0.6:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:6}}><div style={{fontWeight:700,fontSize:14,color:"#1a1a1a"}}>{t.subject||t.type}</div><span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:t.status==="closed"?"#E8F5E9":"#FFF3E0",color:t.status==="closed"?"#2E7D32":"#E65100"}}>{(t.status||"open").toUpperCase()}</span></div>
+        {t.contact&&<div style={{fontSize:12.5,color:"#1565C0",marginBottom:4,wordBreak:"break-all"}}>Contact: {t.contact}</div>}
+        <div style={{fontSize:13.5,color:"#333",whiteSpace:"pre-wrap",lineHeight:1.6}}>{t.message}</div>
+        <div style={{fontSize:11,color:"#999",marginTop:6}}>{t.created_at?new Date(t.created_at).toLocaleString():""}</div>
+        <div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>toggleTicket(t)} style={{flex:1,padding:9,borderRadius:8,border:"none",background:t.status==="closed"?"#888":"#27ae60",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}>{t.status==="closed"?"Reopen":"Mark Closed"}</button><button onClick={()=>delTicket(t)} style={{padding:"9px 14px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13}}>Delete</button></div>
+      </div>)}
+    </div>}
 
     {tab==="payments"&&<div style={{padding:16}}>
       <div style={{fontWeight:700,fontSize:16,marginBottom:12,color:"#1a1a1a"}}>💳 Manual Payments ({subs.filter(s=>s.status==="pending").length} pending)</div>
