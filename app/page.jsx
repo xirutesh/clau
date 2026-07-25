@@ -101,7 +101,16 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
   const[gc,setGc]=useState(false);const[gcType,setGcType]=useState("");const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
-  const oc=async()=>{if(!auth){onAuth();return;}setPay(true);try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();if(d.invoice_url)window.open(d.invoice_url,"_blank");else alert("Error");}catch{alert("Error");}setPay(false);};
+  const oc=async()=>{if(!auth){onAuth();return;}setPay(true);
+    // Open the tab synchronously INSIDE the click; mobile browsers block a popup
+    // opened after the await, which left a blank page until an F5. Redirect it once
+    // the invoice URL is ready; if the popup was blocked, use the current tab.
+    const win=window.open("","_blank");
+    try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();
+      if(d.invoice_url){if(win&&!win.closed)win.location.href=d.invoice_url;else window.location.href=d.invoice_url;}
+      else{if(win&&!win.closed)win.close();alert("Payment error. Please try again.");}
+    }catch{if(win&&!win.closed)win.close();alert("Payment error. Please try again.");}
+    setPay(false);};
   const openStars=()=>{if(!auth){onAuth();return;}const uid=auth?.user?.id||"";window.open(`https://t.me/hgfrdofldebot?start=${ch.id}_${uid}`,"_blank");};
   const subGift=async()=>{if(!auth){onAuth();return;}if(!gcType){alert("Choose which gift card you will use.");return;}if(!code.trim()||!proof){alert("Enter the code and upload a photo of the card.");return;}setSub(true);try{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}const r=await fetch("/api/gift",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({channelId:ch.id,code:code.trim(),photo:proof,method:gcType})});if(r.ok){setDone(true);setGc(false);setGcType("");if(onSubmitted)onSubmitted();}else{const d=await r.json().catch(()=>({}));alert(d.error||"Submission failed. Try again.");}}catch{alert("Submission failed. Try again.");}setSub(false);};
   // The 3 accepted gift cards. Only the selected card's instructions are shown.
