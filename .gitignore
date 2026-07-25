@@ -36,6 +36,11 @@ yarn-error.log*
 # project notes with secrets — do NOT commit
 RESUMEN.md
 
+# uploaded images (logo etc.) — stored in the DB, not in the repo
+photo_*.jpg
+photo_*.jpeg
+photo_*.png
+
 # vercel
 .vercel
 
