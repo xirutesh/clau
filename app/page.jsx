@@ -106,6 +106,9 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
     // opened after the await, which left a blank page until an F5. Redirect it once
     // the invoice URL is ready; if the popup was blocked, use the current tab.
     const win=window.open("","_blank");
+    // Paint a small "loading" page so the new tab isn't a bare about:blank while
+    // we wait for the invoice URL.
+    if(win){try{win.document.write('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Loading…</title><body style="margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f2f2f2;color:#555;display:flex;align-items:center;justify-content:center;height:100vh"><div style="text-align:center"><div style="width:44px;height:44px;border:4px solid #e0e0e0;border-top-color:#c0392b;border-radius:50%;margin:0 auto 14px;animation:s .7s linear infinite"></div>Opening secure payment…</div><style>@keyframes s{to{transform:rotate(360deg)}}</style></body>');}catch{}}
     try{const r=await fetch("/api/pay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:ch.id})});const d=await r.json();
       if(d.invoice_url){if(win&&!win.closed)win.location.href=d.invoice_url;else window.location.href=d.invoice_url;}
       else{if(win&&!win.closed)win.close();alert("Payment error. Please try again.");}
