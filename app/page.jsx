@@ -6,7 +6,7 @@ const SB_URL="https://ehdtctlhfbvflgfdjhkc.supabase.co";
 const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
 // SERVICE_ROLE key -> app/api/db/route.js ; NOWPAYMENTS key -> app/api/pay/route.js.
 // Neither secret ships to the browser.
-const G="#E5A816",R="#C0392B",PK="#F06292";
+const G="#22668D",R="#E07A5F",PK="#3E92B3";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
@@ -89,7 +89,7 @@ function SkCards({cols,n}){return<div style={{display:"grid",gridTemplateColumns
 // product shows a greyed-out version of THAT page (not a blank/generic spinner).
 function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
   <div style={{padding:16}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
-    <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><Sk w={90} h={16} r={6} style={{margin:"0 auto",background:"rgba(255,255,255,0.55)"}}/><div style={{width:85,height:85,borderRadius:"50%",background:"rgba(255,255,255,0.6)",margin:"16px auto 0"}}/></div>
+    <div style={{background:`linear-gradient(135deg,${PK},#6FBBD4)`,padding:"28px 0 44px",textAlign:"center"}}><Sk w={90} h={16} r={6} style={{margin:"0 auto",background:"rgba(255,255,255,0.55)"}}/><div style={{width:85,height:85,borderRadius:"50%",background:"rgba(255,255,255,0.6)",margin:"16px auto 0"}}/></div>
     <div style={{padding:"16px 20px 20px"}}><Sk w={120} h={18} style={{margin:"0 auto 8px"}}/><Sk w={180} h={14} style={{margin:"0 auto 20px"}}/><Sk w="100%" h={48} r={10} style={{marginBottom:10}}/><Sk w="100%" h={48} r={10} style={{marginBottom:10}}/><Sk w="100%" h={48} r={10}/></div>
   </div></div>
   <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",display:"flex",justifyContent:"center"}}><Sk w={220} h={16}/></div></div>
@@ -139,7 +139,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const gcSel=GC.find(g=>g.k===gcType);
   return<div>
     <div style={{padding:16,background:"#f2f2f2"}}><div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
-      <div style={{background:`linear-gradient(135deg,${PK},#F48FB1)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
+      <div style={{background:`linear-gradient(135deg,${PK},#6FBBD4)`,padding:"28px 0 44px",textAlign:"center"}}><div style={{color:"#fff",fontSize:18,fontWeight:700}}>1 month</div><div style={{width:85,height:85,borderRadius:"50%",background:G,margin:"16px auto 0",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:28,fontWeight:900}}>${ch.price}</div></div>
       <div style={{textAlign:"center",padding:"16px 0 8px"}}><div style={{fontWeight:800,fontSize:18,color:"#1a1a1a"}}>Full Access</div><div style={{color:G,fontSize:15,marginTop:4,fontWeight:600}}>{ch.name}</div></div>
       <div style={{padding:"8px 20px 20px"}}>
         <button onClick={oc} disabled={pay} style={{width:"100%",padding:14,borderRadius:10,border:"none",fontSize:16,fontWeight:700,color:"#fff",cursor:"pointer",background:"linear-gradient(135deg,#43A047,#2E7D32)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:pay?0.7:1}}><Globe size={18}/>{pay?"Loading...":"Crypto"}</button>
