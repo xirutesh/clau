@@ -107,9 +107,8 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   // The 3 accepted gift cards. Only the selected card's instructions are shown.
   const GC=[
     {k:"Binance",emoji:"🟡",note:"",steps:[
-      "Open the Binance app or binance.com and log in (create a free account if you don't have one).",
-      `Open Gift Card (search Gift Card inside the app) and create a Crypto Gift Card in USDT for at least $${ch.price} USD.`,
-      "You will get a redemption code (16 characters). Take a clear photo or screenshot of it.",
+      `Search on Google for "buy Binance gift card" and buy one for at least $${ch.price} USD from the results (the official Binance page or a trusted reseller).`,
+      "You will get a redemption code. Take a clear photo or screenshot of it.",
       "Paste the code below, upload the photo, and press Submit.",
     ]},
     {k:"Amazon (US)",emoji:"📦",note:"It must be a US Amazon.com gift card (not from another country).",steps:[
