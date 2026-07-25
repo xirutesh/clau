@@ -12,7 +12,7 @@ const SB_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHRjdGxoZmJ2ZmxnZmRqaGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzcxNTgsImV4cCI6MjA5ODcxMzE1OH0.WH_q6ZwT2I6c3YaYqylQK9ZmBdxklXO_xmW4PbFZTm0";
 const NOWPAY = process.env.NOWPAYMENTS_API_KEY;
 const PLISIO = process.env.PLISIO_API_KEY;
-const SITE_URL = process.env.SITE_URL || "https://clau-five.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://uflashbrazil.tv";
 
 // Plisio takes GET query params and answers { status, data: { invoice_url } }.
 // The "?json=true" on callback_url is REQUIRED: without it Plisio posts the
