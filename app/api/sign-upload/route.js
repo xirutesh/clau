@@ -39,6 +39,7 @@ export async function POST(request) {
   const r = await fetch(`${SB_URL}/storage/v1/object/upload/sign/${BUCKET}/${name}`, {
     method: "POST",
     headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_SVC}`, "Content-Type": "application/json" },
+    body: "{}",
   });
   if (!r.ok) {
     const t = await r.text().catch(() => "");
