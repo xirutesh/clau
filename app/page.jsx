@@ -286,7 +286,7 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth,hid
   const[exp,setExp]=useState({});const scr=useScreen();
   const mp=scr.desktop?"14px 60px":"14px 20px",sp=scr.desktop?"10px 60px 10px 88px":"10px 20px 10px 48px";
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
-  const grp={};(channels||[]).forEach(c=>{if(!grp[c.category])grp[c.category]=[];grp[c.category].push(c);});Object.keys(grp).forEach(k=>grp[k].sort((a,b)=>(a.name||"").localeCompare(b.name||"")));
+  const grp={};(channels||[]).forEach(c=>{if(!grp[c.category])grp[c.category]=[];grp[c.category].push(c);});Object.keys(grp).forEach(k=>grp[k].sort((a,b)=>((b.is_mine?1:0)-(a.is_mine?1:0))||(a.name||"").localeCompare(b.name||"")));
   if(!open)return null;
   return<div style={{background:G,width:"100%"}}>
     <style>{`@keyframes goldBlink{0%,100%{color:#C0392B}50%{color:#fff}}`}</style>
@@ -294,7 +294,7 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth,hid
     {exp.INFO&&[{k:"p053",l:"Telegram"},{k:"p041",l:"18 USC 2257"},{k:"p072",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{i.l}</div>)}
     {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];if(hideEmpty&&items.length===0)return null;const isG=cat==="GOLD-AREA";const isExp=exp[cat];return<div key={i}>
       <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?undefined:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10,background:isExp?"rgba(0,0,0,0.08)":"transparent",animation:isG?"goldBlink 1s infinite":"none"}}><Video size={16} fill={isG?"currentColor":"#fff"} strokeWidth={0}/>{cat}{items.length>0&&<span style={{color:isG?undefined:"#FFD54F"}}>▼</span>}</div>
-      {isExp&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{ch.name}</div>)}
+      {isExp&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:ch.is_mine?"#FFD54F":"#ffffffdd",fontSize:14,cursor:"pointer",fontWeight:ch.is_mine?800:400}}>{ch.is_mine?"⭐ ":""}{ch.name}</div>)}
     </div>})}
     <div style={{borderTop:"1px solid rgba(255,255,255,0.15)",marginTop:4}}>{auth?<>{isAdmin&&<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Settings size={16}/>Admin Panel</div>}<div style={{padding:mp,color:"#fff",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}><span>Welcome : {auth.username||"user"}</span><span onClick={onLogout} style={{color:"#ffcccc",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:14}}><LogOut size={14}/>LogOut</span></div></>:<div onClick={onAdmin} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><LogIn size={16}/>LogIn</div>}</div>
   </div>;
@@ -406,7 +406,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
-  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:""});
+  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:"",is_mine:false});
   const[form,setForm]=useState(defF());
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);const[mig,setMig]=useState(null);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
@@ -441,7 +441,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     const origImgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
     let imgs=origImgs;
     if((!editing||imgDirty)&&imgs.some(v=>v.startsWith("data:")))imgs=await Promise.all(imgs.map(resolveUpload));
-    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:editing?(editing.views||rv):rv};
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,is_mine:!!form.is_mine,views:editing?(editing.views||rv):rv};
     // Only send images when they actually changed (editing text on a product with many
     // photos shouldn't re-send anything).
     if(!editing||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
@@ -544,7 +544,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const delTicket=async(t)=>{await api.aDel("tickets",`id=eq.${t.id}`);setTickets(x=>x.filter(v=>v.id!==t.id));notify("🗑 Ticket deleted");};
   const startE=ch=>{setECh(ch);setImgDirty(false);
     const base=ch.image_url?[ch.image_url]:[];
-    setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",images:base,description:ch.description||""});
+    setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",images:base,description:ch.description||"",is_mine:!!ch.is_mine});
     // The list omits the gallery to stay light; pull this product's full set now.
     api.get("channels",`id=eq.${ch.id}&select=images,image_url`).then(rows=>{const imgs=rows&&rows[0]&&rows[0].images;const g=Array.isArray(imgs)&&imgs.length?imgs:base;setForm(f=>({...f,images:g,image_url:g[0]||""}));}).catch(()=>{});};
   // Edit tab: products filtered by category chip AND the name search box.
@@ -572,6 +572,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
+    <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,cursor:"pointer",color:"#333",fontWeight:600,marginBottom:10,background:"#FFF8E1",border:"1px solid #FFE082",borderRadius:8,padding:"10px 12px"}}><input type="checkbox" checked={!!form.is_mine} onChange={e=>setForm({...form,is_mine:e.target.checked})}/>⭐ Featured (my own product) — shown first & highlighted</label>
     <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav||imgBusy} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:(sav||imgBusy)?"wait":"pointer",background:eCh?"#27ae60":G,opacity:(sav||imgBusy)?0.7:1}}>{imgBusy?"Processing photos…":sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm(defF());setImgDirty(false)}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#444",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
   </div>;
 
@@ -783,7 +784,7 @@ export default function App(){
       // Products + config in PARALLEL (were sequential). Show the page as soon as these
       // two are ready — don't make the whole catalog wait on anything else.
       const[c,f]=await Promise.all([
-        api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views&order=id"),
+        api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views,is_mine&order=id"),
         api.getOne("site_config","id=eq.1&select=*"),
       ]);
       setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
@@ -865,6 +866,10 @@ export default function App(){
         <SC label="Views" value={aViews||0} sub="Total views" icon={<Eye size={20}/>} iconBg="#A0917B" ready={ready}/>
         <SC label="Users" value={usersTotal} sub="new Users (annual)" change={`+${usersAnnual}`} icon={<Star size={20}/>} iconBg="#F5D6A0" ready={ready}/>
       </div>
+      {custChs.filter(c=>c.is_mine).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}>
+        <div style={{display:"inline-block",background:"linear-gradient(135deg,#F5A623,#E67E22)",borderRadius:30,padding:"10px 26px",marginBottom:20,boxShadow:"0 3px 12px rgba(230,126,34,0.35)"}}><span style={{color:"#fff",fontWeight:800,fontSize:scr.desktop?15:13,letterSpacing:2,textTransform:"uppercase"}}>⭐ Featured</span></div>
+        <div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{custChs.filter(c=>c.is_mine).map(ch=><div key={`mine-${ch.id}`}><div style={{display:"inline-block",background:"#FFF3E0",color:"#E65100",fontWeight:800,fontSize:12,letterSpacing:1,textTransform:"uppercase",borderRadius:6,padding:"3px 10px",marginBottom:6}}>{ch.category}</div><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/></div>)}</div>
+      </div>}
       {!ready&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><SkCards cols={scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr"} n={scr.mobile?2:3}/></div>}
 
       <div style={{padding:scr.desktop?"36px 60px":"28px 16px",textAlign:"center"}}>
