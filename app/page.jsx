@@ -99,8 +99,20 @@ async function uploadImage(dataUrl){
 const uploadCache=new Map();
 function startUpload(dataUrl){if(!uploadCache.has(dataUrl))uploadCache.set(dataUrl,uploadImage(dataUrl).catch(()=>null));return uploadCache.get(dataUrl);}
 async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))return v;const p=uploadCache.get(v)||startUpload(v);const url=await p;return url||v;}
-// Upload a video FILE (from picker / iPhone camera roll) to Storage; returns its URL.
-function uploadVideo(file){return new Promise(resolve=>{if(!file){resolve(null);return;}const r=new FileReader();r.onerror=()=>resolve(null);r.onload=e=>{uploadImage(e.target.result).then(resolve).catch(()=>resolve(null));};r.readAsDataURL(file);});}
+// Upload a video FILE (from picker / iPhone camera roll) DIRECTLY to Storage, streaming
+// the raw bytes (no base64) so even large videos work. Plays inline on the product page.
+async function uploadVideo(file){
+  try{
+    if(!file)return null;
+    let s;try{s=JSON.parse(localStorage.getItem("auth")||"null")}catch{}
+    const tk=s&&s.token;if(!tk)return null;
+    const ext=((file.name||"").split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4";
+    const name=`vid-${Date.now()}-${Math.random().toString(36).slice(2,10)}.${ext}`;
+    const r=await fetch(`${SB_URL}/storage/v1/object/product-images/${name}`,{method:"POST",headers:{apikey:SB_ANON,Authorization:`Bearer ${tk}`,"Content-Type":file.type||"video/mp4","x-upsert":"true","Cache-Control":"public, max-age=31536000, immutable"},body:file});
+    if(!r.ok)return null;
+    return `${SB_URL}/storage/v1/object/public/product-images/${name}`;
+  }catch{return null;}
+}
 // A stored/uploaded video file (play inline) vs an external link (open in a tab).
 function isVideoFile(u){return typeof u==="string"&&(/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u)||u.includes("/storage/v1/object/public/"));}
 // Turn a shareable video link into an embeddable player URL, so it plays INSIDE the site
