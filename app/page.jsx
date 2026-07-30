@@ -81,6 +81,18 @@ function processImage(file,watermark){
     r.readAsDataURL(file);
   });
 }
+// Send a processed image (base64 data URL) to /api/upload, which stores it in Supabase
+// Storage and returns a short public URL. Returns null on failure so the caller can
+// fall back to keeping the base64 (nothing breaks if Storage/bucket isn't ready).
+async function uploadImage(dataUrl){
+  try{
+    let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}
+    const r=await fetch("/api/upload",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({dataUrl})});
+    if(!r.ok)return null;
+    const d=await r.json();
+    return (d&&typeof d.url==="string"&&d.url)||null;
+  }catch{return null;}
+}
 // Single-image uploader (used by the gift-card proof). value/onChange are a string.
 function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
@@ -105,7 +117,7 @@ function ImgUpMulti({value,onChange,watermark,max=Infinity,onBusy}){
     if(!list.length||room<=0)return;
     setBusy(true);if(bz.current)bz.current(true);
     const out=[];
-    for(const f of list.slice(0,room)){try{const d=await processImage(f,wm.current);if(d&&typeof d==="string"&&d.startsWith("data:"))out.push(d);}catch{}}
+    for(const f of list.slice(0,room)){try{const d=await processImage(f,wm.current);if(d&&typeof d==="string"&&d.startsWith("data:")){const url=await uploadImage(d);out.push(url||d);/* URL from Storage, or base64 fallback */}}catch{}}
     if(out.length)ref.current([...valRef.current,...out].slice(0,max));
     setBusy(false);if(bz.current)bz.current(false);
   };
