@@ -263,7 +263,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         {inProc&&<div style={{marginTop:12,padding:16,borderRadius:10,background:"#FFF3E0",border:"1px solid #FFCC80",textAlign:"center",color:"#E65100",fontWeight:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>⏳ Your Gift Card request is in process. We&apos;ll review it and confirm your access shortly.</div>}
       </div>
     </div></div>
-    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT:${ch.video_count>0?` ${ch.video_count}`:ch.image_url?" ALREADY SHOWN IN THE PHOTO":""}`}</div></div></div>
+    <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT:${ch.video_count>0?` ${ch.video_count}`:""}`}</div></div></div>
     <div style={{padding:"8px 16px 24px"}}>{(()=>{const list=(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])).filter(v=>typeof v==="string"&&v.trim());
       if(!list.length)return<div onClick={()=>setVid(ch)} style={{cursor:"pointer",background:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}><Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/></div>;
       return list.map((img,i)=><div key={i} onClick={()=>{setPickImg(img);setVid(ch);}} style={{cursor:"pointer",marginBottom:12,borderRadius:10,overflow:"hidden",position:"relative",boxShadow:"0 1px 6px rgba(0,0,0,0.12)"}}>
