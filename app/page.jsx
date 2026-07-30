@@ -116,8 +116,11 @@ function ImgUpMulti({value,onChange,watermark,max=Infinity,onBusy}){
     const room=max-valRef.current.length;
     if(!list.length||room<=0)return;
     setBusy(true);if(bz.current)bz.current(true);
-    const out=[];
-    for(const f of list.slice(0,room)){try{const d=await processImage(f,wm.current);if(d&&typeof d==="string"&&d.startsWith("data:")){const url=await uploadImage(d);out.push(url||d);/* URL from Storage, or base64 fallback */}}catch{}}
+    // Prepare all images in parallel and show them instantly (as local previews).
+    // The actual upload to Storage happens later, at save time — so adding photos
+    // feels immediate and never waits on the network.
+    const results=await Promise.all(list.slice(0,room).map(f=>processImage(f,wm.current).catch(()=>null)));
+    const out=results.filter(d=>typeof d==="string"&&d.startsWith("data:"));
     if(out.length)ref.current([...valRef.current,...out].slice(0,max));
     setBusy(false);if(bz.current)bz.current(false);
   };
@@ -423,13 +426,17 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     const nm=form.name.trim().toLowerCase();
     if(channels.some(c=>(c.name||"").trim().toLowerCase()===nm&&(!eCh||c.id!==eCh.id))){notify("⚠️ A product with that name already exists","err");return;}
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
-    const imgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
-    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
-    // Only send the (heavy, multi-MB) images when they were actually changed. Editing
-    // just the name/price on a product with many photos used to re-upload everything.
-    if(!eCh||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
     const editing=eCh;
     setSav(true);
+    // Upload any not-yet-uploaded photos to Storage in PARALLEL, then store short URLs.
+    // (URLs pass through untouched; a base64 that fails to upload falls back to itself
+    // so nothing is lost.) Only when the images were actually changed.
+    let imgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
+    if((!editing||imgDirty)&&imgs.some(v=>v.startsWith("data:")))imgs=await Promise.all(imgs.map(async v=>v.startsWith("data:")?((await uploadImage(v))||v):v));
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:editing?(editing.views||rv):rv};
+    // Only send images when they actually changed (editing text on a product with many
+    // photos shouldn't re-send anything).
+    if(!editing||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
     let ok=false,errMsg="",newRow=null;
     try{
       if(editing){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${editing.id}`,data});ok=rp.ok;if(!ok){try{errMsg=(await rp.json())?.message||""}catch{}if(rp.status===401)errMsg="session expired, log out and back in";}}
