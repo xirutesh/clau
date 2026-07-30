@@ -170,7 +170,7 @@ function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
 function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
   // Gallery (up to 15 images) is NOT loaded with the homepage list; fetch it on demand.
-  const[gallery,setGallery]=useState(null);
+  const[gallery,setGallery]=useState(null);const[pickImg,setPickImg]=useState(null);
   useEffect(()=>{let alive=true;setGallery(null);api.get("channels",`id=eq.${ch.id}&select=images`).then(rows=>{if(!alive)return;const imgs=rows&&rows[0]&&rows[0].images;setGallery(Array.isArray(imgs)&&imgs.length?imgs:(ch.image_url?[ch.image_url]:[]));}).catch(()=>{if(alive)setGallery(ch.image_url?[ch.image_url]:[]);});return()=>{alive=false};},[ch.id]);
   const[gc,setGc]=useState(false);const[gcType,setGcType]=useState("");const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
@@ -242,10 +242,16 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
       </div>
     </div></div>
     <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT:${ch.video_count>0?` ${ch.video_count}`:ch.image_url?" ALREADY SHOWN IN THE PHOTO":""}`}</div></div></div>
-    <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
-    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
-      <Gallery imgs={gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])}/>
+    <div style={{padding:"8px 16px 24px"}}>{(()=>{const list=gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[]);
+      if(!list.length)return<div onClick={()=>setVid(ch)} style={{cursor:"pointer",background:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}><Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/></div>;
+      return list.map((img,i)=><div key={i} onClick={()=>{setPickImg(img);setVid(ch);}} style={{cursor:"pointer",marginBottom:12,borderRadius:10,overflow:"hidden",position:"relative",boxShadow:"0 1px 6px rgba(0,0,0,0.12)"}}>
+        <div style={{background:`url(${img}) center/cover`,paddingTop:"56.25%"}}/>
+        {i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{ch.name}</span><span style={{display:"flex",alignItems:"center",gap:4,fontSize:12}}><Eye size={14}/>{ch.views||0}</span></div>}
+      </div>);
+    })()}</div>
+    {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>{setVid(null);setPickImg(null);}}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>{setVid(null);setPickImg(null);}}/></div>
+      <Gallery imgs={pickImg?[pickImg]:(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[]))}/>
       <div style={{padding:"16px 16px 0"}}><div style={{background:"#FDE8E8",padding:"14px 16px",borderRadius:4,color:"#c0392b",textAlign:"center",fontSize:15,fontWeight:500}}>Download link , available after purchases.</div></div>
       {ch.description&&<div style={{padding:"14px 16px 0",fontSize:15,color:"#333",lineHeight:1.6,borderLeft:"3px solid #ddd",marginLeft:16,marginTop:12,paddingLeft:12}}>{ch.description}</div>}
       <div style={{padding:"16px 16px 20px",fontSize:16,color:"#1a1a1a"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{lineHeight:2.2}}><div><span style={{fontWeight:800}}>Duration:</span> {ch.duration||"—"}</div></div><div><span style={{fontWeight:800}}>Views:</span> {ch.views||0}</div></div></div>
