@@ -468,8 +468,8 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     setMig({running:true,done:0,total:0,migrated:0,failed:0});
     const all=await api.aGet("channels","select=id&order=id");
     const ids=Array.isArray(all)?all.map(c=>c.id):[];
-    let migrated=0,failed=0;setMig({running:true,done:0,total:ids.length,migrated:0,failed:0});
-    for(let i=0;i<ids.length;i++){const id=ids[i];
+    let done=0,migrated=0,failed=0;setMig({running:true,done:0,total:ids.length,migrated:0,failed:0});
+    const migrateOne=async(id)=>{
       try{
         const rows=await api.aGet("channels",`id=eq.${id}&select=image_url,images`);const row=rows&&rows[0];
         if(row){
@@ -483,8 +483,12 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
           }
         }
       }catch{failed++;}
-      setMig({running:true,done:i+1,total:ids.length,migrated,failed});
-    }
+      done++;setMig({running:true,done,total:ids.length,migrated,failed});
+    };
+    // Run several products at once (was one-by-one, which was slow).
+    const CONC=6;let idx=0;
+    const worker=async()=>{while(idx<ids.length){const id=ids[idx++];await migrateOne(id);}};
+    await Promise.all(Array.from({length:Math.min(CONC,ids.length||1)},()=>worker()));
     setMig({running:false,done:ids.length,total:ids.length,migrated,failed});
     notify(`✅ Migration done: ${migrated} moved to Storage${failed?` · ${failed} pending (bucket ready?)`:""}`,failed?"err":"ok");
     await reload();
