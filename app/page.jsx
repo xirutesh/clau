@@ -653,16 +653,28 @@ export default function App(){
   // Load data + restore pending channel (by real ID or display ID)
   // Explicit column list (NOT select=*) so the heavy `images` gallery column is never
   // pulled for the whole catalog — only the cover (image_url) loads on the home/list.
-  const load=useCallback(async()=>{try{const c=await api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views&order=id");const f=await api.getOne("site_config","id=eq.1&select=*");setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
-    const h=window.location.hash.replace("#","");
-    // Only resolve a product from an explicit shared link (URL hash); never from
-    // the last-browsed route in localStorage.
-    if(h&&/^\d{5}$/.test(h)){const found=c.find(x=>dId(x.id)===h);if(found){setSCh(found);setPendCh(null);}}
-    // created_at lets us split "total ever" from "signed up this year" (annual counter).
-    const u=await api.aGet("profiles","select=id,created_at");
-    if(Array.isArray(u)){const yr=new Date().getFullYear();setUserCount(u.length);
-      setYearCount(u.filter(p=>p.created_at&&new Date(p.created_at).getFullYear()===yr).length);}
-  }catch{setChs([]);setCfg(defCfg);}setReady(true)},[]);
+  const load=useCallback(async()=>{
+    try{
+      // Products + config in PARALLEL (were sequential). Show the page as soon as these
+      // two are ready — don't make the whole catalog wait on anything else.
+      const[c,f]=await Promise.all([
+        api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views&order=id"),
+        api.getOne("site_config","id=eq.1&select=*"),
+      ]);
+      setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
+      const h=window.location.hash.replace("#","");
+      // Only resolve a product from an explicit shared link (URL hash); never from
+      // the last-browsed route in localStorage.
+      if(h&&/^\d{5}$/.test(h)){const found=c.find(x=>dId(x.id)===h);if(found){setSCh(found);setPendCh(null);}}
+    }catch{setChs([]);setCfg(defCfg);}
+    setReady(true);
+    // User stats (annual counter) load AFTER the page is on screen — this call goes
+    // through the serverless proxy (can cold-start) so it must never block the catalog.
+    try{const u=await api.aGet("profiles","select=id,created_at");
+      if(Array.isArray(u)){const yr=new Date().getFullYear();setUserCount(u.length);
+        setYearCount(u.filter(p=>p.created_at&&new Date(p.created_at).getFullYear()===yr).length);}
+    }catch{}
+  },[]);
   useEffect(()=>{load()},[load]);
 
   // Load the user's own Gift Card submissions (to show "in process" status)
