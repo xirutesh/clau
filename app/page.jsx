@@ -837,7 +837,7 @@ export default function App(){
   const loading=!ready&&!waiting;
   // When "hide products without a photo" is on, customers only see products that have
   // a cover image; categories with none of them are then hidden by DM automatically.
-  const custChs=cfg.hide_no_photo?chs.filter(c=>c.image_url):chs;
+  const custChs=cfg.hide_no_photo?chs.filter(c=>c.image_url||(Array.isArray(c.videos)&&c.videos.filter(Boolean).length>0)):chs;
 
   const rawH=Array.isArray(cfg.sections)?cfg.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
