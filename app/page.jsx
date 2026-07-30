@@ -93,6 +93,12 @@ async function uploadImage(dataUrl){
     return (d&&typeof d.url==="string"&&d.url)||null;
   }catch{return null;}
 }
+// Background upload cache: maps a processed base64 data URL -> a Promise of its Storage
+// URL. Uploads start the moment a photo is added, so by the time the admin hits Save the
+// upload is usually already done and saving is instant.
+const uploadCache=new Map();
+function startUpload(dataUrl){if(!uploadCache.has(dataUrl))uploadCache.set(dataUrl,uploadImage(dataUrl).catch(()=>null));return uploadCache.get(dataUrl);}
+async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))return v;const p=uploadCache.get(v)||startUpload(v);const url=await p;return url||v;}
 // Single-image uploader (used by the gift-card proof). value/onChange are a string.
 function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
@@ -121,7 +127,7 @@ function ImgUpMulti({value,onChange,watermark,max=Infinity,onBusy}){
     // feels immediate and never waits on the network.
     const results=await Promise.all(list.slice(0,room).map(f=>processImage(f,wm.current).catch(()=>null)));
     const out=results.filter(d=>typeof d==="string"&&d.startsWith("data:"));
-    if(out.length)ref.current([...valRef.current,...out].slice(0,max));
+    if(out.length){ref.current([...valRef.current,...out].slice(0,max));out.forEach(startUpload);/* upload in background now */}
     setBusy(false);if(bz.current)bz.current(false);
   };
   useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;const fs=[];for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/"))fs.push(it[i].getAsFile());if(fs.length){addFiles(fs);e.preventDefault();}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
@@ -431,8 +437,9 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     // Upload any not-yet-uploaded photos to Storage in PARALLEL, then store short URLs.
     // (URLs pass through untouched; a base64 that fails to upload falls back to itself
     // so nothing is lost.) Only when the images were actually changed.
-    let imgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
-    if((!editing||imgDirty)&&imgs.some(v=>v.startsWith("data:")))imgs=await Promise.all(imgs.map(async v=>v.startsWith("data:")?((await uploadImage(v))||v):v));
+    const origImgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
+    let imgs=origImgs;
+    if((!editing||imgDirty)&&imgs.some(v=>v.startsWith("data:")))imgs=await Promise.all(imgs.map(resolveUpload));
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:editing?(editing.views||rv):rv};
     // Only send images when they actually changed (editing text on a product with many
     // photos shouldn't re-send anything).
@@ -448,6 +455,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     // Update the in-memory list LOCALLY — no heavy full reload of the whole catalog
     // (that re-download of every base64 cover was what left the list stuck at 0).
     if(setChannels){if(editing)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));else if(newRow)setChannels(prev=>[...prev,newRow]);}
+    origImgs.forEach(v=>uploadCache.delete(v));// free memory for the uploaded originals
     notify(editing?"✅ Channel saved":"✅ Channel added");
     setECh(null);setForm(defF());setImgDirty(false);};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
