@@ -380,7 +380,7 @@ function SiteTab({config,sCfg,inp}){
 function Toast({msg,type,onDone}){useEffect(()=>{const t=setTimeout(onDone,2500);return()=>clearTimeout(t)},[onDone]);return<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:type==="ok"?"#27ae60":type==="err"?"#e74c3c":"#f39c12",color:"#fff",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",animation:"fadeIn 0.3s"}}><style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>{msg}</div>}
 
 function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogout}){
-  const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);const editFormRef=useRef(null);
+  const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
@@ -398,9 +398,6 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   // Remember the selected Edit-tab category so it stays put while editing several
   // products in a row (survives saves, reloads and F5).
   useEffect(()=>{try{localStorage.setItem("admCat",catF)}catch{}},[catF]);
-  // On small screens the edit form renders at the top, above the list — scroll to it
-  // when you start editing so it doesn't look like it "disappeared".
-  useEffect(()=>{if(eCh&&editFormRef.current)requestAnimationFrame(()=>editFormRef.current&&editFormRef.current.scrollIntoView({behavior:"smooth",block:"start"}));},[eCh]);
 
   const saveCh=async()=>{if(!form.name)return;
     // Block duplicate names (case-insensitive). When editing, ignore the product itself.
@@ -525,7 +522,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     </div>}
 
     {tab==="edit"&&<div style={{padding:16}}>
-      {eCh&&<div ref={editFormRef}>{chForm}</div>}
+      {eCh&&chForm}
       <textarea placeholder={"🔍 Search — one name per line shows only those products\nProduct A\nProduct B"} value={chSearch} onChange={e=>setChSearch(e.target.value)} rows={chSearch.includes("\n")?4:1} style={{...inp,marginBottom:4,fontWeight:600,resize:"vertical",minHeight:42,lineHeight:1.5}}/>
       {chSearch.trim()&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span style={{fontSize:11,color:"#888"}}>Showing {edFiltered.length} matching product(s)</span><button onClick={()=>setChSearch("")} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#444",fontWeight:700,fontSize:11,cursor:"pointer"}}>Clear search</button></div>}
       <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:10,paddingBottom:2}}>{["all","__nophoto__",...cats].map(c=>{const n=c==="all"?channels.length:c==="__nophoto__"?channels.filter(x=>!x.image_url).length:channels.filter(x=>(x.category||"")===c).length;const lbl=c==="all"?"All":c==="__nophoto__"?"🚫 No photo":c;const active=catF===c;return<button key={c} onClick={()=>setCatF(c)} style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:active?`2px solid ${c==="__nophoto__"?"#c0392b":G}`:"1px solid #ddd",background:active?(c==="__nophoto__"?"#c0392b":G):"#fff",color:active?"#fff":c==="__nophoto__"?"#c0392b":"#555",fontWeight:700,fontSize:12,cursor:"pointer"}}>{lbl} ({n})</button>})}</div>
