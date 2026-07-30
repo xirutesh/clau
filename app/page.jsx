@@ -379,7 +379,7 @@ function SiteTab({config,sCfg,inp}){
 // Admin Panel
 function Toast({msg,type,onDone}){useEffect(()=>{const t=setTimeout(onDone,2500);return()=>clearTimeout(t)},[onDone]);return<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:type==="ok"?"#27ae60":type==="err"?"#e74c3c":"#f39c12",color:"#fff",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",animation:"fadeIn 0.3s"}}><style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>{msg}</div>}
 
-function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
+function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogout}){
   const[tab,setTab]=useState("channels");const[eCh,setECh]=useState(null);const[sav,setSav]=useState(false);
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
@@ -407,6 +407,9 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     // just the name/price on a product with many photos used to re-upload everything.
     if(!eCh||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
     const editing=eCh;
+    // Live update: reflect the change (incl. a just-added photo) in the list instantly,
+    // without waiting for the background reload — so the thumbnail shows right away.
+    if(editing&&setChannels)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));
     // Optimistic: close the form NOW so the admin never waits on the network. The write
     // and the list refresh happen in the background; a toast only appears if it fails.
     setECh(null);setForm(defF());setImgDirty(false);
@@ -421,7 +424,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null,images:[]});notify(ok?`🖼 Photos removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
   // Set one price on all selected products at once.
   const setPriceSel=async()=>{const p=Number(bulkPrice);if(!(p>0)){notify("Enter a valid price","err");return;}setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{price:p});notify(ok?`💲 Price $${p} set on ${n} product(s)`:"Failed to set price",ok?"ok":"err");setBulkPrice("");setSel(new Set());await reload();setSav(false);};
-  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${lines.length} channels added`);setBulkNames("");await reload();setBulkSav(false);};
+  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${lines.length} channels added`);await reload();setBulkSav(false);};
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
@@ -435,7 +438,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     // The list omits the gallery to stay light; pull this product's full set now.
     api.get("channels",`id=eq.${ch.id}&select=images,image_url`).then(rows=>{const imgs=rows&&rows[0]&&rows[0].images;const g=Array.isArray(imgs)&&imgs.length?imgs:base;setForm(f=>({...f,images:g,image_url:g[0]||""}));}).catch(()=>{});};
   // Edit tab: products filtered by category chip AND the name search box.
-  const edFiltered=channels.filter(c=>catF==="all"||(c.category||"")===catF).filter(c=>{const q=chSearch.trim().toLowerCase();return !q||(c.name||"").toLowerCase().includes(q);});
+  const edFiltered=channels.filter(c=>catF==="all"?true:catF==="__nophoto__"?!c.image_url:(c.category||"")===catF).filter(c=>{const q=chSearch.trim().toLowerCase();return !q||(c.name||"").toLowerCase().includes(q);});
   const allS=edFiltered.length>0&&edFiltered.every(c=>sel.has(c.id));
 
   // Auto stats
@@ -506,14 +509,15 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
         <textarea placeholder={"Product Name 1\nProduct Name 2\nProduct Name 3"} value={bulkNames} onChange={e=>setBulkNames(e.target.value)} style={{...inp,minHeight:80,resize:"vertical"}}/>
         <label style={{fontSize:13,color:"#555",fontWeight:600}}>Category for all:</label>
         <select value={bulkCat} onChange={e=>setBulkCat(e.target.value)} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
-        <button onClick={bulkAdd} disabled={bulkSav} style={{width:"100%",padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:"#1565C0",opacity:bulkSav?0.7:1}}>{bulkSav?"Adding...":"Add All"}</button>
+        <div style={{display:"flex",gap:8}}><button onClick={bulkAdd} disabled={bulkSav} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:"#1565C0",opacity:bulkSav?0.7:1}}>{bulkSav?"Adding...":"Add All"}</button>{bulkNames.trim()&&<button onClick={()=>setBulkNames("")} style={{padding:"11px 16px",border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#444",cursor:"pointer",background:"#fff"}}>Clear</button>}</div>
+        <div style={{fontSize:11,color:"#888",marginTop:4}}>The names stay here after adding so you don&apos;t have to retype them. Use Clear when done.</div>
       </div>
     </div>}
 
     {tab==="edit"&&<div style={{padding:16}}>
       {eCh&&chForm}
       <input placeholder="🔍 Search product by name to edit..." value={chSearch} onChange={e=>setChSearch(e.target.value)} style={{...inp,marginBottom:10,fontWeight:600}}/>
-      <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:10,paddingBottom:2}}>{["all",...cats].map(c=>{const n=c==="all"?channels.length:channels.filter(x=>(x.category||"")===c).length;return<button key={c} onClick={()=>setCatF(c)} style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:catF===c?`2px solid ${G}`:"1px solid #ddd",background:catF===c?G:"#fff",color:catF===c?"#fff":"#555",fontWeight:700,fontSize:12,cursor:"pointer"}}>{c==="all"?"All":c} ({n})</button>})}</div>
+      <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:10,paddingBottom:2}}>{["all","__nophoto__",...cats].map(c=>{const n=c==="all"?channels.length:c==="__nophoto__"?channels.filter(x=>!x.image_url).length:channels.filter(x=>(x.category||"")===c).length;const lbl=c==="all"?"All":c==="__nophoto__"?"🚫 No photo":c;const active=catF===c;return<button key={c} onClick={()=>setCatF(c)} style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:active?`2px solid ${c==="__nophoto__"?"#c0392b":G}`:"1px solid #ddd",background:active?(c==="__nophoto__"?"#c0392b":G):"#fff",color:active?"#fff":c==="__nophoto__"?"#c0392b":"#555",fontWeight:700,fontSize:12,cursor:"pointer"}}>{lbl} ({n})</button>})}</div>
       <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={allS} onChange={()=>{const nx=new Set(sel);if(allS)edFiltered.forEach(c=>nx.delete(c.id));else edFiltered.forEach(c=>nx.add(c.id));setSel(nx);}} style={{width:18,height:18}}/>{allS?"Deselect":"Select"} All ({edFiltered.length})</label>{sel.size>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         {!pDel?<button onClick={()=>{setPDel(true);setCDel(false)}} style={{padding:"6px 12px",borderRadius:8,border:"none",background:"#8E24AA",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>🖼 Remove Photos ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delPhotos} style={{padding:"6px 12px",borderRadius:8,border:"none",background:"#8E24AA",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm photos</button><button onClick={()=>setPDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#444",cursor:"pointer",fontSize:11}}>No</button></div>}
         {!cDel?<button onClick={()=>{setCDel(true);setPDel(false)}} style={{padding:"6px 14px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>Delete ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delSel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm</button><button onClick={()=>setCDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#444",cursor:"pointer",fontSize:11}}>No</button></div>}
@@ -658,7 +662,7 @@ export default function App(){
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"90px 0",gap:16}}><div style={{width:46,height:46,border:"4px solid #f0f0f0",borderTop:`4px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/><div style={{color:"#888",fontSize:14,fontWeight:600}}>Loading…</div></div>
   </div>;
 
-  if(sAd&&isA)return<Admin auth={auth} channels={chs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();openAuth("login");}}/>;
+  if(sAd&&isA)return<Admin auth={auth} channels={chs} setChannels={setChs} config={cfg} setConfig={setCfg} onClose={closeAdmin} reload={load} onLogout={()=>{setAuth(null);clearAuth();openAuth("login");}}/>;
   if(sA&&!auth)return<Auth defaultMode={aM} onLogin={a=>{setAuth(a);setSAd(false);closeAuth()}} onBack={()=>closeAuth()}/>;
 
   // If there's a pending channel, show header + spinner (not homepage)
