@@ -102,19 +102,17 @@ async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))r
 // Upload a video FILE (from picker / iPhone camera roll) DIRECTLY to Storage, streaming
 // the raw bytes (no base64) so even large videos work. Plays inline on the product page.
 async function uploadVideo(file){
+  if(!file)return {error:"No file"};
+  const ext=((file.name||"").split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4";
+  const post=()=>{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}
+    return fetch(`/api/upload-video?ext=${ext}`,{method:"POST",headers:{"Content-Type":file.type||"video/mp4",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:file});};
   try{
-    if(!file)return {error:"No file"};
-    let s;try{s=JSON.parse(localStorage.getItem("auth")||"null")}catch{}
-    const tk=s&&s.token;if(!tk)return {error:"Not logged in"};
-    const ext=((file.name||"").split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4";
-    const name=`vid-${Date.now()}-${Math.random().toString(36).slice(2,10)}.${ext}`;
-    const r=await fetch(`${SB_URL}/storage/v1/object/product-images/${name}`,{method:"POST",headers:{apikey:SB_ANON,Authorization:`Bearer ${tk}`,"Content-Type":file.type||"video/mp4","x-upsert":"true","Cache-Control":"public, max-age=31536000, immutable"},body:file});
-    if(!r.ok){let t="";try{t=await r.text()}catch{}
-      let hint="";
-      if(r.status===403||/row-level|policy|violates/i.test(t))hint=" — run the Storage upload policy SQL (I gave it to you)";
-      else if(r.status===413||/exceeded|maximum|too large|size/i.test(t))hint=" — Supabase free plan caps files at 50MB; use a smaller clip or YouTube";
-      return {error:`${r.status}${hint}`,raw:t.slice(0,160)};}
-    return {url:`${SB_URL}/storage/v1/object/public/product-images/${name}`};
+    let r=await post();
+    if(r.status===401&&await api.refreshToken())r=await post();// token expired -> refresh once
+    if(!r.ok){let msg="";try{msg=(await r.json()).error||""}catch{}
+      const hint=r.status===413?" — file over the limit (Supabase free plan caps ~50MB; use a shorter clip or YouTube)":r.status===401?" — session expired, log out and back in":"";
+      return {error:`${r.status}${hint}${msg?": "+msg:""}`};}
+    const d=await r.json();return {url:d.url};
   }catch{return {error:"Network error"};}
 }
 // A stored/uploaded video file (play inline) vs an external link (open in a tab).
