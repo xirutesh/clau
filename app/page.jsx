@@ -90,8 +90,9 @@ function ImgUp({value,onChange,watermark}){
   return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:watermark?260:120,height:watermark?146:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
 }
 // Multi-image uploader (product gallery). value/onChange are an array of data URLs.
-// Supports: drag & drop many files, file picker (multiple), and Ctrl+V paste. Max `max`.
-function ImgUpMulti({value,onChange,watermark,max=15}){
+// Supports: drag & drop many files, file picker (multiple), and Ctrl+V paste.
+// No cap by default (max=Infinity); pass `max` to limit.
+function ImgUpMulti({value,onChange,watermark,max=Infinity}){
   const arr=Array.isArray(value)?value:[];
   const ref=useRef(onChange);ref.current=onChange;
   const wm=useRef(watermark);wm.current=watermark;
@@ -113,7 +114,7 @@ function ImgUpMulti({value,onChange,watermark,max=15}){
   const full=arr.length>=max;
   return<div style={{marginBottom:8}}>
     <div onDragOver={e=>{e.preventDefault();if(!full)setDrag(true);}} onDragLeave={e=>{e.preventDefault();setDrag(false);}} onDrop={e=>{e.preventDefault();setDrag(false);addFiles(e.dataTransfer.files);}} style={{border:`2px dashed ${drag?G:full?"#ddd":"#bbb"}`,borderRadius:10,padding:"14px 12px",textAlign:"center",background:drag?"#EAF3F7":"#fafafa",transition:"all .15s"}}>
-      <div style={{color:full?"#c0392b":"#666",fontSize:13,marginBottom:8}}>{busy?"Processing…":full?`Maximum ${max} images reached`:`Drag images here · ${arr.length}/${max}`}</div>
+      <div style={{color:full?"#c0392b":"#666",fontSize:13,marginBottom:8}}>{busy?"Processing…":full?`Maximum ${max} images reached`:`Drag images here · ${arr.length}${isFinite(max)?"/"+max:" images"}`}</div>
       <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:full?"#bbb":G,color:"#fff",fontWeight:700,fontSize:13,cursor:full?"not-allowed":"pointer"}}><Upload size={14}/>Choose files<input type="file" accept="image/*" multiple disabled={full} style={{display:"none"}} onChange={e=>{addFiles(e.target.files);e.target.value="";}}/></label>
       <span style={{fontSize:11,color:"#aaa",marginLeft:8}}>or Ctrl+V</span>
     </div>
@@ -391,7 +392,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
   const saveCh=async()=>{if(!form.name)return;
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
-    const imgs=Array.isArray(form.images)?form.images.filter(Boolean).slice(0,15):[];
+    const imgs=Array.isArray(form.images)?form.images.filter(Boolean):[];
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
     // Only send the (heavy, multi-MB) images when they were actually changed. Editing
     // just the name/price on a product with many photos used to re-upload everything.
@@ -444,8 +445,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     <div style={{display:"flex",gap:8}}><select value={form.resolution} onChange={e=>setForm({...form,resolution:e.target.value})} style={{...inp,flex:1}}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select><input placeholder="Size" value={form.size} onChange={e=>setForm({...form,size:e.target.value})} style={{...inp,flex:1}}/></div>
     <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
-    <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Images (up to 15 — first one is the cover):</div>
-    <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark max={15}/>
+    <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Images (first one is the cover):</div>
+    <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark/>
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
