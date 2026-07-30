@@ -648,9 +648,15 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
       {cntReport&&<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12,fontSize:13,lineHeight:1.7}}>
         <div style={{fontWeight:700,marginBottom:6}}>Result</div>
         <div style={{color:"#27ae60",fontWeight:700}}>✅ {cntReport.updated} updated</div>
-        {cntReport.dup>0&&<div style={{color:"#E65100"}}>⏭ {cntReport.dup} skipped (duplicate name): {cntReport.dupNames.join(", ")}</div>}
-        {cntReport.notfound>0&&<div style={{color:"#c0392b"}}>❓ {cntReport.notfound} not found: {cntReport.nfNames.join(", ")}</div>}
-        {cntReport.bad>0&&<div style={{color:"#c0392b"}}>⚠️ {cntReport.bad} line(s) had a bad format (need "Name - number")</div>}
+        {cntReport.dup>0&&<div style={{marginTop:8}}>
+          <div style={{color:"#E65100",fontWeight:700}}>⏭ {cntReport.dup} skipped — same name on two products (fix by hand):</div>
+          <ul style={{margin:"4px 0 0",paddingLeft:22,color:"#E65100"}}>{cntReport.dupNames.map((n,i)=><li key={i} style={{fontWeight:600}}>{n}</li>)}</ul>
+        </div>}
+        {cntReport.notfound>0&&<div style={{marginTop:8}}>
+          <div style={{color:"#c0392b",fontWeight:700}}>❓ {cntReport.notfound} not found:</div>
+          <ul style={{margin:"4px 0 0",paddingLeft:22,color:"#c0392b"}}>{cntReport.nfNames.map((n,i)=><li key={i}>{n}</li>)}</ul>
+        </div>}
+        {cntReport.bad>0&&<div style={{marginTop:8,color:"#c0392b"}}>⚠️ {cntReport.bad} line(s) had a bad format (need "Name - number")</div>}
       </div>}
     </div>}
 
