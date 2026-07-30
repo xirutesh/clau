@@ -10,7 +10,7 @@ const G="#22668D",R="#E07A5F",PK="#3E92B3";
 const tagC=[{bg:"#FFE0B2",t:"#E65100"},{bg:"#F8BBD0",t:"#AD1457"},{bg:"#C8E6C9",t:"#2E7D32"},{bg:"#BBDEFB",t:"#1565C0"},{bg:"#E1BEE7",t:"#6A1B9A"},{bg:"#FFF9C4",t:"#F9A825"},{bg:"#B2EBF2",t:"#00838F"},{bg:"#FFCDD2",t:"#C62828"},{bg:"#D1C4E9",t:"#4527A0"},{bg:"#DCEDC8",t:"#558B2F"},{bg:"#FFE0B2",t:"#BF360C"},{bg:"#F0F4C3",t:"#827717"},{bg:"#B3E5FC",t:"#01579B"},{bg:"#FCE4EC",t:"#880E4F"},{bg:"#E8EAF6",t:"#283593"},{bg:"#FFF3E0",t:"#E65100"}];
 const defCats=["INFO","GOLD-AREA","Telegram","Action","Comedy","Drama","Thriller","Shorts","Candids","Other"];
 const defHome=[{id:"top-selling",title:"Top Selling Section of the Month",visible:true},{id:"top-viewed",title:"Top Viewed Videos of the Month",visible:true},{id:"latest",title:"Latest Updates",visible:true}];
-const defCfg={site_name:"UflashBrazil.TV",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+345",fake_users_annual_year:null,stars_per_usd:50};
+const defCfg={site_name:"UflashBrazil.TV",slogan:"For All Your Pleasures",logo_url:null,telegram_link:"",stats:{},sections:defHome,categories:defCats,manual_payments:[],global_delivery_link:"",fake_users:345,fake_users_annual:"+345",fake_users_annual_year:null,stars_per_usd:50,hide_no_photo:false};
 
 function useScreen(){const[w,setW]=useState(375);useEffect(()=>{setW(window.innerWidth);const h=()=>setW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h)},[]);return{mobile:w<768,tablet:w>=768&&w<1024,desktop:w>=1024}}
 
@@ -260,7 +260,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
 }
 
 // Dropdown Menu
-function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
+function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth,hideEmpty}){
   const[exp,setExp]=useState({});const scr=useScreen();
   const mp=scr.desktop?"14px 60px":"14px 20px",sp=scr.desktop?"10px 60px 10px 88px":"10px 20px 10px 48px";
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
@@ -270,7 +270,7 @@ function DM({open,channels,onSel,isAdmin,onAdmin,onLogout,onInfo,config,auth}){
     <style>{`@keyframes goldBlink{0%,100%{color:#C0392B}50%{color:#fff}}`}</style>
     <div onClick={()=>setExp(p=>({...p,INFO:!p.INFO}))} style={{padding:mp,color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}><Info size={16}/>INFO <span style={{color:"#FFD54F"}}>▼</span></div>
     {exp.INFO&&[{k:"p053",l:"Telegram"},{k:"p041",l:"18 USC 2257"},{k:"p072",l:"CONTENT REMOVAL"}].map(i=><div key={i.k} onClick={()=>onInfo(i.k)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{i.l}</div>)}
-    {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];const isG=cat==="GOLD-AREA";const isExp=exp[cat];return<div key={i}>
+    {cats.filter(c=>c!=="INFO").map((cat,i)=>{const items=grp[cat]||[];if(hideEmpty&&items.length===0)return null;const isG=cat==="GOLD-AREA";const isExp=exp[cat];return<div key={i}>
       <div onClick={()=>items.length&&setExp(p=>({...p,[cat]:!p[cat]}))} style={{padding:mp,color:isG?undefined:"#fff",fontWeight:700,fontSize:16,cursor:items.length?"pointer":"default",display:"flex",alignItems:"center",gap:10,background:isExp?"rgba(0,0,0,0.08)":"transparent",animation:isG?"goldBlink 1s infinite":"none"}}><Video size={16} fill={isG?"currentColor":"#fff"} strokeWidth={0}/>{cat}{items.length>0&&<span style={{color:isG?undefined:"#FFD54F"}}>▼</span>}</div>
       {isExp&&items.map(ch=><div key={ch.id} onClick={()=>onSel(ch)} style={{padding:sp,color:"#ffffffdd",fontSize:14,cursor:"pointer"}}>{ch.name}</div>)}
     </div>})}
@@ -368,6 +368,9 @@ function SiteTab({config,sCfg,inp}){
       <div style={{fontSize:12,color:"#27ae60",marginBottom:8}}>Views auto-calculates. Users are fake.</div>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Users (homepage)</label><input type="number" value={f.fake_users} onChange={e=>setF({...f,fake_users:e.target.value})} style={inp}/>
       <label style={{fontSize:13,color:"#555",fontWeight:600}}>Annual Growth (resets each year)</label><input value={f.fake_users_annual} onChange={e=>setF({...f,fake_users_annual:e.target.value})} style={inp} placeholder="+355"/>
+    </div>
+    <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}><div style={{fontWeight:700,fontSize:14,marginBottom:8}}>👁️ Customer Visibility</div>
+      <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer"}}><input type="checkbox" checked={!!config?.hide_no_photo} onChange={e=>sCfg({hide_no_photo:e.target.checked})} style={{width:18,height:18,marginTop:2,flexShrink:0}}/><div><div style={{fontSize:14,fontWeight:600,color:"#333"}}>Hide products without a photo</div><div style={{fontSize:11.5,color:"#888",marginTop:2,lineHeight:1.5}}>Products with no photo are hidden from customers. A whole category is hidden if none of its products have a photo — it reappears automatically once you add one.</div></div></label>
     </div>
     <button onClick={save} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:saved?"#27ae60":G,color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer"}}>{saved?"✅ Saved!":"Save Changes"}</button>
   </div>;
@@ -661,6 +664,9 @@ export default function App(){
   // If there's a pending channel, show header + spinner (not homepage)
   const waiting=pendCh!==null&&!sCh;
   const loading=!ready&&!waiting;
+  // When "hide products without a photo" is on, customers only see products that have
+  // a cover image; categories with none of them are then hidden by DM automatically.
+  const custChs=cfg.hide_no_photo?chs.filter(c=>c.image_url):chs;
 
   const rawH=Array.isArray(cfg.sections)?cfg.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
@@ -692,7 +698,7 @@ export default function App(){
     {!ready&&<div style={{position:"fixed",top:0,left:0,right:0,height:3,background:`${R}22`,zIndex:3000,overflow:"hidden"}}><div style={{position:"absolute",top:0,bottom:0,width:"40%",background:R,animation:"ldbar 1.05s ease-in-out infinite"}}/></div>}
     {!ready&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"8px 0",background:"#fff",color:R,fontWeight:700,fontSize:13,borderBottom:"1px solid #eee"}}><div style={{width:14,height:14,border:"2px solid #f0c9c9",borderTop:`2px solid ${R}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>Loading…</div>}
 
-    <DM open={mO} channels={chs} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
+    <DM open={mO} channels={custChs} hideEmpty={cfg.hide_no_photo} config={cfg} auth={auth} onSel={ch=>navCh(ch)} isAdmin={isA} onAdmin={()=>{setMO(false);isA?openAdmin():openAuth("login")}} onLogout={()=>{setAuth(null);clearAuth();openAuth("login")}} onInfo={p=>navInfo(p)}/>
 
     {iP?<div style={{maxWidth:900,margin:"0 auto",padding:pad}}><InfoP page={iP} config={cfg} auth={auth} onAuth={()=>openAuth("login")}/></div>
     :sCh?<div style={{maxWidth:650,margin:"0 auto"}}><ChPage ch={sCh} config={cfg} auth={auth} onAuth={()=>openAuth("signup")} pendingSub={mySubs.some(s=>String(s.channel_id)===String(sCh.id)&&s.status==="pending")} onSubmitted={refreshMySubs}/></div>
@@ -714,7 +720,7 @@ export default function App(){
       </div>
       <div style={{height:3,background:G}}/>
 
-      {la.visible!==false&&chs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{chs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
+      {la.visible!==false&&custChs.filter(c=>c.section_latest).length>0&&<div style={{padding:scr.desktop?"30px 60px":"24px 16px",textAlign:"center"}}><div style={{display:"inline-block",border:`1px solid ${G}50`,borderRadius:30,padding:"10px 24px",marginBottom:20}}><span style={{color:R,fontWeight:700,fontSize:scr.desktop?14:12,letterSpacing:2,textTransform:"uppercase"}}>{la.title}</span></div><div style={{display:"grid",gridTemplateColumns:scr.desktop?"1fr 1fr 1fr":scr.tablet?"1fr 1fr":"1fr",gap:16}}>{custChs.filter(c=>c.section_latest).map(ch=><VT key={`la-${ch.id}`} v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>navCh(ch)}/>)}</div></div>}
 
       <div style={{background:G,padding:"20px 16px",textAlign:"center",color:"#fff",fontSize:12}}>© 2026 UflashBrazil.TV — All Rights Reserved</div>
     </>}
