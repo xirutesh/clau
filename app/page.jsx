@@ -400,6 +400,9 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   useEffect(()=>{try{localStorage.setItem("admCat",catF)}catch{}},[catF]);
 
   const saveCh=async()=>{if(!form.name)return;
+    // Block duplicate names (case-insensitive). When editing, ignore the product itself.
+    const nm=form.name.trim().toLowerCase();
+    if(channels.some(c=>(c.name||"").trim().toLowerCase()===nm&&(!eCh||c.id!==eCh.id))){notify("⚠️ A product with that name already exists","err");return;}
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
     const imgs=Array.isArray(form.images)?form.images.filter(Boolean):[];
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
@@ -424,7 +427,12 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null,images:[]});notify(ok?`🖼 Photos removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
   // Set one price on all selected products at once.
   const setPriceSel=async()=>{const p=Number(bulkPrice);if(!(p>0)){notify("Enter a valid price","err");return;}setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{price:p});notify(ok?`💲 Price $${p} set on ${n} product(s)`:"Failed to set price",ok?"ok":"err");setBulkPrice("");setSel(new Set());await reload();setSav(false);};
-  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${lines.length} channels added`);setBulkNames("");await reload();setBulkSav(false);};
+  const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;
+    // Skip names that already exist, and duplicates within the pasted list.
+    const existing=new Set(channels.map(c=>(c.name||"").trim().toLowerCase()));const seen=new Set();const toAdd=[];let skipped=0;
+    for(const name of lines){const k=name.toLowerCase();if(existing.has(k)||seen.has(k)){skipped++;continue;}seen.add(k);toAdd.push(name);}
+    if(!toAdd.length){notify(`⚠️ All ${skipped} name(s) already exist`,"err");return;}
+    setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of toAdd){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${toAdd.length} added${skipped?` · ${skipped} skipped (duplicates)`:""}`);setBulkNames("");await reload();setBulkSav(false);};
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
