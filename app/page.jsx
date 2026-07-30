@@ -92,21 +92,22 @@ function ImgUp({value,onChange,watermark}){
 // Multi-image uploader (product gallery). value/onChange are an array of data URLs.
 // Supports: drag & drop many files, file picker (multiple), and Ctrl+V paste.
 // No cap by default (max=Infinity); pass `max` to limit.
-function ImgUpMulti({value,onChange,watermark,max=Infinity}){
-  const arr=Array.isArray(value)?value:[];
+function ImgUpMulti({value,onChange,watermark,max=Infinity,onBusy}){
+  const arr=(Array.isArray(value)?value:[]).filter(Boolean);
   const ref=useRef(onChange);ref.current=onChange;
   const wm=useRef(watermark);wm.current=watermark;
   const valRef=useRef(arr);valRef.current=arr;
+  const bz=useRef(onBusy);bz.current=onBusy;
   const[drag,setDrag]=useState(false);const[busy,setBusy]=useState(false);
   const addFiles=async(files)=>{
     const list=[...(files||[])].filter(f=>f&&f.type&&f.type.startsWith("image/"));
     const room=max-valRef.current.length;
     if(!list.length||room<=0)return;
-    setBusy(true);
+    setBusy(true);if(bz.current)bz.current(true);
     const out=[];
-    for(const f of list.slice(0,room)){try{out.push(await processImage(f,wm.current));}catch{}}
+    for(const f of list.slice(0,room)){try{const d=await processImage(f,wm.current);if(d&&typeof d==="string"&&d.startsWith("data:"))out.push(d);}catch{}}
     if(out.length)ref.current([...valRef.current,...out].slice(0,max));
-    setBusy(false);
+    setBusy(false);if(bz.current)bz.current(false);
   };
   useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;const fs=[];for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/"))fs.push(it[i].getAsFile());if(fs.length){addFiles(fs);e.preventDefault();}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
   const removeAt=i=>ref.current(valRef.current.filter((_,j)=>j!==i));
@@ -171,7 +172,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
   // Gallery (up to 15 images) is NOT loaded with the homepage list; fetch it on demand.
   const[gallery,setGallery]=useState(null);const[pickImg,setPickImg]=useState(null);
-  useEffect(()=>{let alive=true;setGallery(null);api.get("channels",`id=eq.${ch.id}&select=images`).then(rows=>{if(!alive)return;const imgs=rows&&rows[0]&&rows[0].images;setGallery(Array.isArray(imgs)&&imgs.length?imgs:(ch.image_url?[ch.image_url]:[]));}).catch(()=>{if(alive)setGallery(ch.image_url?[ch.image_url]:[]);});return()=>{alive=false};},[ch.id]);
+  useEffect(()=>{let alive=true;setGallery(null);api.get("channels",`id=eq.${ch.id}&select=images`).then(rows=>{if(!alive)return;const imgs=(rows&&rows[0]&&rows[0].images||[]).filter(v=>typeof v==="string"&&v.trim());setGallery(imgs.length?imgs:(ch.image_url?[ch.image_url]:[]));}).catch(()=>{if(alive)setGallery(ch.image_url?[ch.image_url]:[]);});return()=>{alive=false};},[ch.id]);
   const[gc,setGc]=useState(false);const[gcType,setGcType]=useState("");const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);
@@ -242,7 +243,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
       </div>
     </div></div>
     <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT:${ch.video_count>0?` ${ch.video_count}`:ch.image_url?" ALREADY SHOWN IN THE PHOTO":""}`}</div></div></div>
-    <div style={{padding:"8px 16px 24px"}}>{(()=>{const list=gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[]);
+    <div style={{padding:"8px 16px 24px"}}>{(()=>{const list=(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])).filter(v=>typeof v==="string"&&v.trim());
       if(!list.length)return<div onClick={()=>setVid(ch)} style={{cursor:"pointer",background:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}><Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/></div>;
       return list.map((img,i)=><div key={i} onClick={()=>{setPickImg(img);setVid(ch);}} style={{cursor:"pointer",marginBottom:12,borderRadius:10,overflow:"hidden",position:"relative",boxShadow:"0 1px 6px rgba(0,0,0,0.12)"}}>
         <div style={{background:`url(${img}) center/cover`,paddingTop:"56.25%"}}/>
@@ -386,7 +387,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:""});
   const[form,setForm]=useState(defF());
-  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
@@ -403,27 +404,32 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   useEffect(()=>{if(eCh)requestAnimationFrame(()=>{if(editFormRef.current)editFormRef.current.scrollIntoView({behavior:"smooth",block:"start"});else window.scrollTo({top:0,behavior:"smooth"});});},[eCh]);
 
   const saveCh=async()=>{if(!form.name)return;
+    // Don't save while photos are still being processed — otherwise the product would
+    // save with no photo (or a half-processed one).
+    if(imgBusy){notify("⏳ Photos are still processing — wait a moment","err");return;}
     // Block duplicate names (case-insensitive). When editing, ignore the product itself.
     const nm=form.name.trim().toLowerCase();
     if(channels.some(c=>(c.name||"").trim().toLowerCase()===nm&&(!eCh||c.id!==eCh.id))){notify("⚠️ A product with that name already exists","err");return;}
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
-    const imgs=Array.isArray(form.images)?form.images.filter(Boolean):[];
+    const imgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
     // Only send the (heavy, multi-MB) images when they were actually changed. Editing
     // just the name/price on a product with many photos used to re-upload everything.
     if(!eCh||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
     const editing=eCh;
-    // Live update: reflect the change (incl. a just-added photo) in the list instantly,
-    // without waiting for the background reload — so the thumbnail shows right away.
-    if(editing&&setChannels)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));
-    // Optimistic: close the form NOW so the admin never waits on the network. The write
-    // and the list refresh happen in the background; a toast only appears if it fails.
-    setECh(null);setForm(defF());setImgDirty(false);
-    notify(editing?"✅ Channel saved":"✅ Channel added");
+    setSav(true);
+    let ok=false,errMsg="";
     try{
-      if(editing){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${editing.id}`,data});if(!rp.ok){let m="";try{m=(await rp.json())?.message||""}catch{}notify(`Save failed (${rp.status})${m?": "+m:rp.status===401?": session expired, log out and back in":""}`,"err");}}
-      else{const r=await api.aPost("channels",data);if(!r||r.message){notify("Add failed: "+(r?.message||"Error"),"err");}}
-    }catch{notify("Save failed — check your connection","err");}
+      if(editing){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${editing.id}`,data});ok=rp.ok;if(!ok){try{errMsg=(await rp.json())?.message||""}catch{}if(rp.status===401)errMsg="session expired, log out and back in";}}
+      else{const r=await api.aPost("channels",data);ok=!!(r&&!r.message);if(!ok)errMsg=(r&&r.message)||"maybe too many/large photos";}
+    }catch{errMsg="check your connection";}
+    setSav(false);
+    // On failure KEEP the form (photos are NOT lost) and show a clear error.
+    if(!ok){notify(`❌ ${editing?"Save":"Add"} failed: ${errMsg}`,"err");return;}
+    // Success: update the list live (instant thumbnail), then reset + background refresh.
+    if(editing&&setChannels)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));
+    notify(editing?"✅ Channel saved":"✅ Channel added");
+    setECh(null);setForm(defF());setImgDirty(false);
     reload();};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
   // Remove ONLY the photo (image_url=null) from the selected products, keeping name/price/etc.
@@ -472,11 +478,11 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Images (first one is the cover):</div>
-    <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark/>
+    <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark onBusy={setImgBusy}/>
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
-    <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:"pointer",background:eCh?"#27ae60":G}}>{sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm(defF());setImgDirty(false)}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#444",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
+    <div style={{display:"flex",gap:8}}><button onClick={saveCh} disabled={sav||imgBusy} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:(sav||imgBusy)?"wait":"pointer",background:eCh?"#27ae60":G,opacity:(sav||imgBusy)?0.7:1}}>{imgBusy?"Processing photos…":sav?"Saving...":eCh?"Save":"Add"}</button>{eCh&&<button onClick={()=>{setECh(null);setForm(defF());setImgDirty(false)}} style={{padding:11,border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#444",cursor:"pointer",background:"#fff"}}>Cancel</button>}</div>
   </div>;
 
   return<div style={{position:"fixed",inset:0,background:"#f5f5f5",zIndex:2000,overflowY:"auto"}}>
