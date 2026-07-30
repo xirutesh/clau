@@ -103,6 +103,18 @@ async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))r
 function uploadVideo(file){return new Promise(resolve=>{if(!file){resolve(null);return;}const r=new FileReader();r.onerror=()=>resolve(null);r.onload=e=>{uploadImage(e.target.result).then(resolve).catch(()=>resolve(null));};r.readAsDataURL(file);});}
 // A stored/uploaded video file (play inline) vs an external link (open in a tab).
 function isVideoFile(u){return typeof u==="string"&&(/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u)||u.includes("/storage/v1/object/public/"));}
+// Turn a shareable video link into an embeddable player URL, so it plays INSIDE the site
+// instead of just linking out. YouTube/Vimeo (and already-embed URLs) work; sites that
+// block embedding return null and fall back to a "Watch" button.
+function embedUrl(u){
+  if(typeof u!=="string")return null;
+  let m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if(m)return `https://www.youtube.com/embed/${m[1]}`;
+  m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if(m)return `https://player.vimeo.com/video/${m[1]}`;
+  if(/\/embed(\/|\?|$)/i.test(u)||/\/\/player\./i.test(u))return u;// already a player/embed URL
+  return null;
+}
 // Single-image uploader (used by the gift-card proof). value/onChange are a string.
 function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
@@ -277,9 +289,12 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
     })()}</div>
     {Array.isArray(ch.videos)&&ch.videos.filter(Boolean).length>0&&<div style={{padding:"0 16px 24px"}}>
       <div style={{fontWeight:800,fontSize:16,color:"#1a1a1a",marginBottom:10,display:"flex",alignItems:"center",gap:8}}><Video size={20} color="#8E24AA"/>Videos</div>
-      {ch.videos.filter(Boolean).map((v,i)=>isVideoFile(v)
-        ?<video key={i} src={v} controls playsInline preload="metadata" style={{width:"100%",borderRadius:10,marginBottom:12,background:"#000",maxHeight:420}}/>
-        :<a key={i} href={v} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:14,marginBottom:12,borderRadius:10,background:"linear-gradient(135deg,#8E24AA,#5E35B1)",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}><Play size={18}/>Watch video {ch.videos.filter(Boolean).length>1?`#${i+1}`:""}</a>)}
+      {ch.videos.filter(Boolean).map((v,i)=>{
+        if(isVideoFile(v))return<video key={i} src={v} controls playsInline preload="metadata" style={{width:"100%",borderRadius:10,marginBottom:12,background:"#000",maxHeight:420}}/>;
+        const emb=embedUrl(v);
+        if(emb)return<div key={i} style={{position:"relative",paddingTop:"56.25%",marginBottom:12,borderRadius:10,overflow:"hidden",background:"#000"}}><iframe src={emb} title="video" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowFullScreen style={{position:"absolute",inset:0,width:"100%",height:"100%",border:0}}/></div>;
+        return<a key={i} href={v} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:14,marginBottom:12,borderRadius:10,background:"linear-gradient(135deg,#8E24AA,#5E35B1)",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}><Play size={18}/>Watch video {ch.videos.filter(Boolean).length>1?`#${i+1}`:""}</a>;
+      })}
     </div>}
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>{setVid(null);setPickImg(null);}}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>{setVid(null);setPickImg(null);}}/></div>
