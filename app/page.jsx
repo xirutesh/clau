@@ -392,7 +392,10 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     const imgs=Array.isArray(form.images)?form.images.filter(Boolean).slice(0,15):[];
     const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:imgs[0]||null,images:imgs,description:form.description||null,views:eCh?(eCh.views||rv):rv};
     if(eCh){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${eCh.id}`,data});if(!rp.ok){let m="";try{m=(await rp.json())?.message||""}catch{}notify(`Save failed (${rp.status})${m?": "+m:rp.status===401?": session expired, log out and back in":""}`,"err");setSav(false);return;}setECh(null);notify("✅ Channel saved");}else{const r=await api.aPost("channels",data);if(!r||r.message){notify("Add failed: "+(r?.message||"Error"),"err");setSav(false);return;}notify("✅ Channel added");}
-    setForm(defF());await reload();setSav(false);};
+    // Clear the spinner as soon as the write itself finishes; refresh the list in
+    // the background (reload() re-fetches everything, which was what made "Saving..."
+    // linger for seconds after the save had already succeeded).
+    setForm(defF());setSav(false);reload();};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
   // Remove ONLY the photo (image_url=null) from the selected products, keeping name/price/etc.
   const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null,images:[]});notify(ok?`🖼 Photos removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
