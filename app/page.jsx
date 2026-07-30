@@ -71,12 +71,82 @@ function stampWatermark(ctx,w,h){
   ctx.textAlign="right";ctx.fillText(t,w-m,ty);ctx.fillText(t,w-m,by);
   ctx.restore();
 }
+// Read one image File -> resized (max 900px wide), optionally watermarked, JPEG data URL.
+// Returns a Promise so several files can be processed one after another.
+function processImage(file,watermark){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type||!file.type.startsWith("image/")){reject(new Error("not an image"));return;}
+    const r=new FileReader();
+    r.onerror=()=>reject(new Error("read failed"));
+    r.onload=e=>{const img=new Image();img.onload=()=>{try{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}const cv=document.createElement("canvas");cv.width=w;cv.height=h;const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);if(watermark)stampWatermark(ctx,w,h);resolve(cv.toDataURL("image/jpeg",0.82));}catch{resolve(e.target.result);}};img.onerror=()=>resolve(e.target.result);img.src=e.target.result;};
+    r.readAsDataURL(file);
+  });
+}
+// Single-image uploader (used by the gift-card proof). value/onChange are a string.
 function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
   const wm=useRef(watermark);wm.current=watermark;
-  const hf=f=>{if(!f||!f.type.startsWith("image/"))return;const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{try{const max=900;let w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}const cv=document.createElement("canvas");cv.width=w;cv.height=h;const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);if(wm.current)stampWatermark(ctx,w,h);ref.current(cv.toDataURL("image/jpeg",0.82));}catch{ref.current(e.target.result);}};img.onerror=()=>ref.current(e.target.result);img.src=e.target.result;};r.readAsDataURL(f);};
+  const hf=f=>{processImage(f,wm.current).then(d=>ref.current(d)).catch(()=>{});};
   useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/")){hf(it[i].getAsFile());e.preventDefault();return;}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
   return<div style={{marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:G,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}><Upload size={14}/>{value?"Change":"Upload"}<input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])hf(e.target.files[0])}}/></label>{value&&<button onClick={()=>onChange("")} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #fdd",background:"#fff",color:R,fontWeight:700,fontSize:12,cursor:"pointer"}}>Remove</button>}<span style={{fontSize:11,color:"#aaa"}}>or Ctrl+V</span></div>{value&&<img src={value} alt="" style={{width:watermark?260:120,height:watermark?146:68,objectFit:"cover",borderRadius:6,border:"1px solid #ddd"}}/>}</div>;
+}
+// Multi-image uploader (product gallery). value/onChange are an array of data URLs.
+// Supports: drag & drop many files, file picker (multiple), and Ctrl+V paste. Max `max`.
+function ImgUpMulti({value,onChange,watermark,max=15}){
+  const arr=Array.isArray(value)?value:[];
+  const ref=useRef(onChange);ref.current=onChange;
+  const wm=useRef(watermark);wm.current=watermark;
+  const valRef=useRef(arr);valRef.current=arr;
+  const[drag,setDrag]=useState(false);const[busy,setBusy]=useState(false);
+  const addFiles=async(files)=>{
+    const list=[...(files||[])].filter(f=>f&&f.type&&f.type.startsWith("image/"));
+    const room=max-valRef.current.length;
+    if(!list.length||room<=0)return;
+    setBusy(true);
+    const out=[];
+    for(const f of list.slice(0,room)){try{out.push(await processImage(f,wm.current));}catch{}}
+    if(out.length)ref.current([...valRef.current,...out].slice(0,max));
+    setBusy(false);
+  };
+  useEffect(()=>{const h=e=>{const it=e.clipboardData?.items;if(!it)return;const fs=[];for(let i=0;i<it.length;i++)if(it[i].type.startsWith("image/"))fs.push(it[i].getAsFile());if(fs.length){addFiles(fs);e.preventDefault();}};window.addEventListener("paste",h);return()=>window.removeEventListener("paste",h)},[]);
+  const removeAt=i=>ref.current(valRef.current.filter((_,j)=>j!==i));
+  const setCover=i=>{const a=[...valRef.current];const[m]=a.splice(i,1);ref.current([m,...a]);};
+  const full=arr.length>=max;
+  return<div style={{marginBottom:8}}>
+    <div onDragOver={e=>{e.preventDefault();if(!full)setDrag(true);}} onDragLeave={e=>{e.preventDefault();setDrag(false);}} onDrop={e=>{e.preventDefault();setDrag(false);addFiles(e.dataTransfer.files);}} style={{border:`2px dashed ${drag?G:full?"#ddd":"#bbb"}`,borderRadius:10,padding:"14px 12px",textAlign:"center",background:drag?"#EAF3F7":"#fafafa",transition:"all .15s"}}>
+      <div style={{color:full?"#c0392b":"#666",fontSize:13,marginBottom:8}}>{busy?"Processing…":full?`Maximum ${max} images reached`:`Drag images here · ${arr.length}/${max}`}</div>
+      <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:full?"#bbb":G,color:"#fff",fontWeight:700,fontSize:13,cursor:full?"not-allowed":"pointer"}}><Upload size={14}/>Choose files<input type="file" accept="image/*" multiple disabled={full} style={{display:"none"}} onChange={e=>{addFiles(e.target.files);e.target.value="";}}/></label>
+      <span style={{fontSize:11,color:"#aaa",marginLeft:8}}>or Ctrl+V</span>
+    </div>
+    {arr.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
+      {arr.map((src,i)=><div key={i} style={{position:"relative",width:96}}>
+        <img src={src} alt="" style={{width:96,height:60,objectFit:"cover",borderRadius:6,border:i===0?`2px solid ${G}`:"1px solid #ddd",display:"block"}}/>
+        {i===0&&<span style={{position:"absolute",top:2,left:2,background:G,color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4}}>Cover</span>}
+        <button type="button" onClick={()=>removeAt(i)} title="Remove" style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:"50%",border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        {i!==0&&<button type="button" onClick={()=>setCover(i)} title="Set as cover" style={{position:"absolute",bottom:2,left:2,background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,border:"none",cursor:"pointer"}}>Set cover</button>}
+      </div>)}
+    </div>}
+  </div>;
+}
+// Customer-facing image gallery (product detail). Falls back to a single image.
+function Gallery({imgs}){
+  const list=Array.isArray(imgs)?imgs.filter(Boolean):[];
+  const[i,setI]=useState(0);
+  useEffect(()=>{setI(0)},[imgs]);
+  if(!list.length)return<div style={{background:"#ccc",paddingTop:"56.25%",position:"relative",borderBottom:"2px solid #c0392b"}}><Film size={50} color="#999" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/></div>;
+  const idx=Math.min(i,list.length-1);
+  const nav={position:"absolute",top:"50%",transform:"translateY(-50%)",width:34,height:34,borderRadius:"50%",border:"none",background:"rgba(0,0,0,0.5)",color:"#fff",fontSize:22,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"};
+  return<div style={{borderBottom:"2px solid #c0392b"}}>
+    <div style={{position:"relative"}}>
+      <div style={{background:`url(${list[idx]}) center/cover`,paddingTop:"56.25%"}}/>
+      {list.length>1&&<>
+        <button onClick={()=>setI(p=>(p-1+list.length)%list.length)} style={{...nav,left:8}}>‹</button>
+        <button onClick={()=>setI(p=>(p+1)%list.length)} style={{...nav,right:8}}>›</button>
+        <div style={{position:"absolute",bottom:8,right:10,background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:12,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{idx+1}/{list.length}</div>
+      </>}
+    </div>
+    {list.length>1&&<div style={{display:"flex",gap:6,overflowX:"auto",padding:8}}>{list.map((s,j)=><img key={j} src={s} onClick={()=>setI(j)} alt="" style={{width:64,height:40,objectFit:"cover",borderRadius:4,cursor:"pointer",flexShrink:0,border:j===idx?`2px solid ${R}`:"1px solid #ddd"}}/>)}</div>}
+  </div>;
 }
 
 // Shimmer skeleton block — the building piece of the loading "preview" screens.
@@ -99,6 +169,9 @@ function ChSkel(){return<div style={{maxWidth:650,margin:"0 auto"}}>
 // Channel Page
 function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
   const[vid,setVid]=useState(null);const[pay,setPay]=useState(false);
+  // Gallery (up to 15 images) is NOT loaded with the homepage list; fetch it on demand.
+  const[gallery,setGallery]=useState(null);
+  useEffect(()=>{let alive=true;setGallery(null);api.get("channels",`id=eq.${ch.id}&select=images`).then(rows=>{if(!alive)return;const imgs=rows&&rows[0]&&rows[0].images;setGallery(Array.isArray(imgs)&&imgs.length?imgs:(ch.image_url?[ch.image_url]:[]));}).catch(()=>{if(alive)setGallery(ch.image_url?[ch.image_url]:[]);});return()=>{alive=false};},[ch.id]);
   const[gc,setGc]=useState(false);const[gcType,setGcType]=useState("");const[code,setCode]=useState("");const[proof,setProof]=useState("");const[sub,setSub]=useState(false);const[done,setDone]=useState(false);
   const inProc=pendingSub||done;
   const oc=async()=>{if(!auth){onAuth();return;}setPay(true);
@@ -172,7 +245,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
     <div style={{padding:"8px 16px 24px"}}><VT v={{title:ch.name,resolution:ch.resolution,views:ch.views,image_url:ch.image_url}} onClick={()=>setVid(ch)}/></div>
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>setVid(null)}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>setVid(null)}/></div>
-      <div style={{background:ch.image_url?`url(${ch.image_url}) center/cover`:"#ccc",paddingTop:"56.25%",position:"relative",borderBottom:"2px solid #c0392b"}}>{!ch.image_url&&<Film size={50} color="#999" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}</div>
+      <Gallery imgs={gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])}/>
       <div style={{padding:"16px 16px 0"}}><div style={{background:"#FDE8E8",padding:"14px 16px",borderRadius:4,color:"#c0392b",textAlign:"center",fontSize:15,fontWeight:500}}>Download link , available after purchases.</div></div>
       {ch.description&&<div style={{padding:"14px 16px 0",fontSize:15,color:"#333",lineHeight:1.6,borderLeft:"3px solid #ddd",marginLeft:16,marginTop:12,paddingLeft:12}}>{ch.description}</div>}
       <div style={{padding:"16px 16px 20px",fontSize:16,color:"#1a1a1a"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{lineHeight:2.2}}><div><span style={{fontWeight:800}}>Duration:</span> {ch.duration||"—"}</div></div><div><span style={{fontWeight:800}}>Views:</span> {ch.views||0}</div></div></div>
@@ -302,9 +375,9 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
-  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",description:""});
+  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:""});
   const[form,setForm]=useState(defF());
-  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[catF,setCatF]=useState("all");
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
@@ -316,12 +389,13 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
   const saveCh=async()=>{if(!form.name)return;setSav(true);
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
-    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:form.image_url||null,description:form.description||null,views:eCh?(eCh.views||rv):rv};
+    const imgs=Array.isArray(form.images)?form.images.filter(Boolean).slice(0,15):[];
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,image_url:imgs[0]||null,images:imgs,description:form.description||null,views:eCh?(eCh.views||rv):rv};
     if(eCh){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${eCh.id}`,data});if(!rp.ok){let m="";try{m=(await rp.json())?.message||""}catch{}notify(`Save failed (${rp.status})${m?": "+m:rp.status===401?": session expired, log out and back in":""}`,"err");setSav(false);return;}setECh(null);notify("✅ Channel saved");}else{const r=await api.aPost("channels",data);if(!r||r.message){notify("Add failed: "+(r?.message||"Error"),"err");setSav(false);return;}notify("✅ Channel added");}
     setForm(defF());await reload();setSav(false);};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
   // Remove ONLY the photo (image_url=null) from the selected products, keeping name/price/etc.
-  const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null});notify(ok?`🖼 Photo removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
+  const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null,images:[]});notify(ok?`🖼 Photos removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
   // Set one price on all selected products at once.
   const setPriceSel=async()=>{const p=Number(bulkPrice);if(!(p>0)){notify("Enter a valid price","err");return;}setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{price:p});notify(ok?`💲 Price $${p} set on ${n} product(s)`:"Failed to set price",ok?"ok":"err");setBulkPrice("");setSel(new Set());await reload();setSav(false);};
   const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of lines){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${lines.length} channels added`);setBulkNames("");await reload();setBulkSav(false);};
@@ -332,8 +406,14 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const rejectSub=async(s)=>{await api.aPatch("gift_submissions",`id=eq.${s.id}`,{status:"rejected"});setSubs(x=>x.map(v=>v.id===s.id?{...v,status:"rejected"}:v));notify("❌ Rejected");};
   const toggleTicket=async(t)=>{const ns=t.status==="closed"?"open":"closed";await api.aPatch("tickets",`id=eq.${t.id}`,{status:ns});setTickets(x=>x.map(v=>v.id===t.id?{...v,status:ns}:v));};
   const delTicket=async(t)=>{await api.aDel("tickets",`id=eq.${t.id}`);setTickets(x=>x.filter(v=>v.id!==t.id));notify("🗑 Ticket deleted");};
-  const startE=ch=>{setECh(ch);setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",description:ch.description||""});};
-  const allS=channels.length>0&&sel.size===channels.length;
+  const startE=ch=>{setECh(ch);
+    const base=ch.image_url?[ch.image_url]:[];
+    setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",images:base,description:ch.description||""});
+    // The list omits the gallery to stay light; pull this product's full set now.
+    api.get("channels",`id=eq.${ch.id}&select=images,image_url`).then(rows=>{const imgs=rows&&rows[0]&&rows[0].images;const g=Array.isArray(imgs)&&imgs.length?imgs:base;setForm(f=>({...f,images:g,image_url:g[0]||""}));}).catch(()=>{});};
+  // Edit tab: products filtered by category chip AND the name search box.
+  const edFiltered=channels.filter(c=>catF==="all"||(c.category||"")===catF).filter(c=>{const q=chSearch.trim().toLowerCase();return !q||(c.name||"").toLowerCase().includes(q);});
+  const allS=edFiltered.length>0&&edFiltered.every(c=>sel.has(c.id));
 
   // Auto stats
   const aVids=channels.reduce((a,c)=>a+(c.video_count||0),0);
@@ -351,8 +431,8 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     <div style={{display:"flex",gap:8}}><select value={form.resolution} onChange={e=>setForm({...form,resolution:e.target.value})} style={{...inp,flex:1}}><option value="1080P">1080P</option><option value="4K">4K</option><option value="720P">720P</option></select><input placeholder="Size" value={form.size} onChange={e=>setForm({...form,size:e.target.value})} style={{...inp,flex:1}}/></div>
     <input placeholder="Duration (e.g. 7:00 min)" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} style={inp}/>
     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
-    <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Image:</div>
-    <ImgUp value={form.image_url} onChange={v=>setForm({...form,image_url:v})} watermark/>
+    <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Images (up to 15 — first one is the cover):</div>
+    <ImgUpMulti value={form.images} onChange={imgs=>setForm({...form,images:imgs,image_url:imgs[0]||""})} watermark max={15}/>
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
@@ -410,12 +490,14 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
     {tab==="edit"&&<div style={{padding:16}}>
       {eCh&&chForm}
       <input placeholder="🔍 Search product by name to edit..." value={chSearch} onChange={e=>setChSearch(e.target.value)} style={{...inp,marginBottom:10,fontWeight:600}}/>
-      <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={allS} onChange={()=>setSel(allS?new Set():new Set(channels.map(c=>c.id)))} style={{width:18,height:18}}/>{allS?"Deselect":"Select"} All ({channels.length})</label>{sel.size>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:10,paddingBottom:2}}>{["all",...cats].map(c=>{const n=c==="all"?channels.length:channels.filter(x=>(x.category||"")===c).length;return<button key={c} onClick={()=>setCatF(c)} style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:catF===c?`2px solid ${G}`:"1px solid #ddd",background:catF===c?G:"#fff",color:catF===c?"#fff":"#555",fontWeight:700,fontSize:12,cursor:"pointer"}}>{c==="all"?"All":c} ({n})</button>})}</div>
+      <div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={allS} onChange={()=>{const nx=new Set(sel);if(allS)edFiltered.forEach(c=>nx.delete(c.id));else edFiltered.forEach(c=>nx.add(c.id));setSel(nx);}} style={{width:18,height:18}}/>{allS?"Deselect":"Select"} All ({edFiltered.length})</label>{sel.size>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         {!pDel?<button onClick={()=>{setPDel(true);setCDel(false)}} style={{padding:"6px 12px",borderRadius:8,border:"none",background:"#8E24AA",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>🖼 Remove Photos ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delPhotos} style={{padding:"6px 12px",borderRadius:8,border:"none",background:"#8E24AA",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm photos</button><button onClick={()=>setPDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#444",cursor:"pointer",fontSize:11}}>No</button></div>}
         {!cDel?<button onClick={()=>{setCDel(true);setPDel(false)}} style={{padding:"6px 14px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:12}}>Delete ({sel.size})</button>:<div style={{display:"flex",gap:4}}><button onClick={delSel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>⚠️ Confirm</button><button onClick={()=>setCDel(false)} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",color:"#444",cursor:"pointer",fontSize:11}}>No</button></div>}
       </div>}</div>
       {sel.size>0&&<div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><span style={{fontSize:13,fontWeight:700,color:"#333"}}>Set price for {sel.size} selected:</span><div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontWeight:700,color:"#555"}}>$</span><input type="number" placeholder="e.g. 50" value={bulkPrice} onChange={e=>setBulkPrice(e.target.value)} style={{width:100,padding:"8px 10px",borderRadius:8,border:"2px solid #aaa",fontSize:14,color:"#333",background:"#fff"}}/></div><button onClick={setPriceSel} disabled={sav} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#27ae60",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13,opacity:sav?0.7:1}}>Apply price</button></div>}
-      {(chSearch.trim()?channels.filter(c=>(c.name||"").toLowerCase().includes(chSearch.trim().toLowerCase())):channels).map(ch=><div key={ch.id} style={{background:sel.has(ch.id)?"#FFF8E1":"#fff",borderRadius:10,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,border:sel.has(ch.id)?`2px solid ${G}`:"2px solid transparent"}}><input type="checkbox" checked={sel.has(ch.id)} onChange={()=>{const n=new Set(sel);n.has(ch.id)?n.delete(ch.id):n.add(ch.id);setSel(n)}} style={{width:18,height:18}}/>{ch.image_url&&<img src={ch.image_url} alt="" style={{width:50,height:28,objectFit:"cover",borderRadius:4}}/>}<div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14}}>{ch.name} {ch.top_selling&&<span style={{fontSize:10,background:"#FFF3E0",color:"#E65100",padding:"2px 6px",borderRadius:4}}>TOP</span>} {ch.section_top_viewed&&<span style={{fontSize:10,background:"#E3F2FD",color:"#1565C0",padding:"2px 6px",borderRadius:4}}>VIEWED</span>} {ch.section_latest&&<span style={{fontSize:10,background:"#E8F5E9",color:"#2E7D32",padding:"2px 6px",borderRadius:4}}>LATEST</span>}</div><div style={{fontSize:11,color:"#555",marginTop:2}}>{ch.category} · ${ch.price} · {ch.video_count} · {ch.resolution||"—"} · 👁 {ch.views||0}</div></div><button onClick={()=>startE(ch)} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div>)}
+      {edFiltered.length===0&&<div style={{textAlign:"center",color:"#999",fontSize:13,padding:"20px 0"}}>No products in this category.</div>}
+      {edFiltered.map(ch=><div key={ch.id} style={{background:sel.has(ch.id)?"#FFF8E1":"#fff",borderRadius:10,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,border:sel.has(ch.id)?`2px solid ${G}`:"2px solid transparent"}}><input type="checkbox" checked={sel.has(ch.id)} onChange={()=>{const n=new Set(sel);n.has(ch.id)?n.delete(ch.id):n.add(ch.id);setSel(n)}} style={{width:18,height:18}}/>{ch.image_url&&<img src={ch.image_url} alt="" style={{width:50,height:28,objectFit:"cover",borderRadius:4}}/>}<div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14}}>{ch.name} {ch.top_selling&&<span style={{fontSize:10,background:"#FFF3E0",color:"#E65100",padding:"2px 6px",borderRadius:4}}>TOP</span>} {ch.section_top_viewed&&<span style={{fontSize:10,background:"#E3F2FD",color:"#1565C0",padding:"2px 6px",borderRadius:4}}>VIEWED</span>} {ch.section_latest&&<span style={{fontSize:10,background:"#E8F5E9",color:"#2E7D32",padding:"2px 6px",borderRadius:4}}>LATEST</span>}</div><div style={{fontSize:11,color:"#555",marginTop:2}}>{ch.category} · ${ch.price} · {ch.video_count} · {ch.resolution||"—"} · 👁 {ch.views||0}</div></div><button onClick={()=>startE(ch)} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div>)}
     </div>}
 
     {tab==="users"&&<div style={{padding:16}}><div style={{fontWeight:700,fontSize:16,marginBottom:12}}>👥 Users ({users.length})</div>{users.map(u=><div key={u.id} style={{background:u.banned?"#FDE8E8":"#fff",borderRadius:10,padding:14,marginBottom:8,border:u.banned?"2px solid #fcc":"1px solid #eee"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:700,fontSize:14}}>{u.username||"user"}</div><div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:u.role==="admin"?"#E65100":"#E8F5E9",color:u.role==="admin"?"#fff":"#2E7D32"}}>{(u.role||"user").toUpperCase()}</span>{u.banned&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:R,color:"#fff"}}>BANNED</span>}{u.delivery_link&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:"#E3F2FD",color:"#1565C0"}}>DELIVERED</span>}</div></div><div style={{display:"flex",gap:5}}>{u.role!=="admin"&&<button onClick={()=>ban(u.id,u.banned)} style={{padding:"6px 10px",borderRadius:8,border:"none",background:u.banned?"#27ae60":R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>{u.banned?"Unban":"Ban"}</button>}{u.role!=="admin"&&<button onClick={()=>{const l=prompt("Delivery link:",config?.global_delivery_link||"");if(l)deliver(u.id,l)}} style={{padding:"6px 10px",borderRadius:8,border:"none",background:"#1565C0",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}><Send size={11}/> Deliver</button>}</div></div>{u.delivery_link&&<div style={{marginTop:8,fontSize:12,color:"#1565C0",background:"#E3F2FD",padding:"6px 10px",borderRadius:6,wordBreak:"break-all"}}>📦 {u.delivery_link}</div>}</div>)}</div>}
@@ -440,7 +522,6 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
 
 // Route persistence via localStorage (not URL hash — avoids hydration issues)
 function saveRoute(r){try{localStorage.setItem("route",JSON.stringify(r))}catch{}}
-function loadRoute(){try{const s=localStorage.getItem("route");return s?JSON.parse(s):null}catch{return null}}
 function clearRoute(){try{localStorage.removeItem("route")}catch{}}
 
 // Main
@@ -515,34 +596,24 @@ export default function App(){
       :["p053","p041","p072"].includes(h)?{t:"info",p:h}
       :(h==="login"||h==="signup")?{t:"auth",m:h}
       :{t:"home"},"",window.location.href);
-    if(h){
-      // Shared link - hash takes priority
-      if(["p053","p041","p072"].includes(h)){setIP(h);}
-      else if(h==="login"||h==="signup"){if(!s){setAM(h);setSA(true);}}
-      else if(/^\d{5}$/.test(h)){setPendCh(h);}// display ID, resolve after load
-      else{// fallback to localStorage
-        const r=loadRoute();
-        if(r&&r.t==="info")setIP(r.p);
-        else if(r&&r.t==="ch")setPendCh(r.id);
-        else if(r&&r.t==="admin"&&s?.role==="admin")setSAd(true);
-        else if(r&&r.t==="auth"&&!s){setAM(r.m||"login");setSA(true);}
-      }
-    }else{
-      const r=loadRoute();
-      if(r&&r.t==="info")setIP(r.p);
-      else if(r&&r.t==="ch")setPendCh(r.id);
-      else if(r&&r.t==="admin"&&s?.role==="admin")setSAd(true);
-      else if(r&&r.t==="auth"&&!s){setAM(r.m||"login");setSA(true);}
-    }
+    // Only an explicit shared link (URL hash) opens a specific view. A plain
+    // re-entry with no hash always lands on the dashboard — we no longer restore
+    // the last-browsed product/info/admin/auth from localStorage.
+    if(["p053","p041","p072"].includes(h)){setIP(h);}
+    else if(h==="login"||h==="signup"){if(!s){setAM(h);setSA(true);}}
+    else if(/^\d{5}$/.test(h)){setPendCh(h);}// display ID, resolve after load
+    else{clearRoute();}// no deep link -> dashboard
     setMounted(true);
   },[]);
 
   // Load data + restore pending channel (by real ID or display ID)
-  const load=useCallback(async()=>{try{const c=await api.get("channels","select=*&order=id");const f=await api.getOne("site_config","id=eq.1&select=*");setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
-    const r=loadRoute();const h=window.location.hash.replace("#","");
-    // Try hash first (shared link), then localStorage
-    if(h&&/^\d{5}$/.test(h)){const found=c.find(x=>dId(x.id)===h);if(found){setSCh(found);setPendCh(null);saveRoute({t:"ch",id:found.id});}}
-    else if(r&&r.t==="ch"){const found=c.find(x=>String(x.id)===String(r.id));if(found){setSCh(found);setPendCh(null);}}
+  // Explicit column list (NOT select=*) so the heavy `images` gallery column is never
+  // pulled for the whole catalog — only the cover (image_url) loads on the home/list.
+  const load=useCallback(async()=>{try{const c=await api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views&order=id");const f=await api.getOne("site_config","id=eq.1&select=*");setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
+    const h=window.location.hash.replace("#","");
+    // Only resolve a product from an explicit shared link (URL hash); never from
+    // the last-browsed route in localStorage.
+    if(h&&/^\d{5}$/.test(h)){const found=c.find(x=>dId(x.id)===h);if(found){setSCh(found);setPendCh(null);}}
     // created_at lets us split "total ever" from "signed up this year" (annual counter).
     const u=await api.aGet("profiles","select=id,created_at");
     if(Array.isArray(u)){const yr=new Date().getFullYear();setUserCount(u.length);
