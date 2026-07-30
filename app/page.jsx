@@ -466,7 +466,9 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const migratePhotos=async()=>{
     if(mig&&mig.running)return;
     setMig({running:true,done:0,total:0,migrated:0,failed:0});
-    const all=await api.aGet("channels","select=id&order=id");
+    // Only the products whose cover is still base64 need migrating — skip everything
+    // else (no photo, or already on Storage) instead of scanning the whole catalog.
+    const all=await api.aGet("channels","select=id&image_url=like.data:*&order=id");
     const ids=Array.isArray(all)?all.map(c=>c.id):[];
     let done=0,migrated=0,failed=0;setMig({running:true,done:0,total:ids.length,migrated:0,failed:0});
     const migrateOne=async(id)=>{
