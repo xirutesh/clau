@@ -376,7 +376,7 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:""});
   const[form,setForm]=useState(defF());
-  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[catF,setCatF]=useState("all");const[imgDirty,setImgDirty]=useState(false);
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
@@ -385,6 +385,9 @@ function Admin({auth,channels,config,setConfig,onClose,reload,onLogout}){
   const homeSecs=[eS("latest","Latest Updates")];
 
   useEffect(()=>{api.aGet("profiles","select=*&order=created_at").then(d=>{if(Array.isArray(d))setUsers(d);});api.aGet("gift_submissions","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setSubs(d);});api.aGet("tickets","select=*&order=created_at.desc").then(d=>{if(Array.isArray(d))setTickets(d);})},[]);
+  // Remember the selected Edit-tab category so it stays put while editing several
+  // products in a row (survives saves, reloads and F5).
+  useEffect(()=>{try{localStorage.setItem("admCat",catF)}catch{}},[catF]);
 
   const saveCh=async()=>{if(!form.name)return;
     const rv=Math.floor(Math.random()*(1320-232+1))+232;
