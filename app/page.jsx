@@ -418,19 +418,19 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     if(!eCh||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
     const editing=eCh;
     setSav(true);
-    let ok=false,errMsg="";
+    let ok=false,errMsg="",newRow=null;
     try{
       if(editing){const rp=await api.adb({method:"PATCH",table:"channels",query:`id=eq.${editing.id}`,data});ok=rp.ok;if(!ok){try{errMsg=(await rp.json())?.message||""}catch{}if(rp.status===401)errMsg="session expired, log out and back in";}}
-      else{const r=await api.aPost("channels",data);ok=!!(r&&!r.message);if(!ok)errMsg=(r&&r.message)||"maybe too many/large photos";}
+      else{const r=await api.aPost("channels",data);const row=Array.isArray(r)?r[0]:r;ok=!!(row&&row.id);if(ok)newRow=row;else errMsg=(r&&r.message)||"maybe too many/large photos";}
     }catch{errMsg="check your connection";}
     setSav(false);
     // On failure KEEP the form (photos are NOT lost) and show a clear error.
     if(!ok){notify(`❌ ${editing?"Save":"Add"} failed: ${errMsg}`,"err");return;}
-    // Success: update the list live (instant thumbnail), then reset + background refresh.
-    if(editing&&setChannels)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));
+    // Update the in-memory list LOCALLY — no heavy full reload of the whole catalog
+    // (that re-download of every base64 cover was what left the list stuck at 0).
+    if(setChannels){if(editing)setChannels(prev=>prev.map(c=>c.id===editing.id?{...c,...data}:c));else if(newRow)setChannels(prev=>[...prev,newRow]);}
     notify(editing?"✅ Channel saved":"✅ Channel added");
-    setECh(null);setForm(defF());setImgDirty(false);
-    reload();};
+    setECh(null);setForm(defF());setImgDirty(false);};
   const delSel=async()=>{setSav(true);await api.aDel("channels",`id=in.(${[...sel].join(",")})`);notify(`🗑 ${sel.size} channel(s) deleted`);setSel(new Set());setCDel(false);await reload();setSav(false);};
   // Remove ONLY the photo (image_url=null) from the selected products, keeping name/price/etc.
   const delPhotos=async()=>{setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{image_url:null,images:[]});notify(ok?`🖼 Photos removed from ${n} product(s)`:"Failed to remove photos",ok?"ok":"err");setSel(new Set());setPDel(false);await reload();setSav(false);};
@@ -444,7 +444,10 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     const existing=new Set(channels.map(c=>(c.name||"").trim().toLowerCase()));const seen=new Set();const toAdd=[];let skipped=0;
     for(const name of lines){const k=name.toLowerCase();if(existing.has(k)||seen.has(k)){skipped++;continue;}seen.add(k);toAdd.push(name);}
     if(!toAdd.length){notify(`⚠️ All ${skipped} name(s) already exist`,"err");return;}
-    setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;for(const name of toAdd){const rv=Math.floor(Math.random()*(1320-232+1))+232;await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});}notify(`✅ ${toAdd.length} added${skipped?` · ${skipped} skipped (duplicates)`:""}`);setBulkNames("");await reload();setBulkSav(false);};
+    setBulkSav(true);const res=config?.default_resolution||"1080P";const price=Number(config?.default_price)||50;const created=[];
+    for(const name of toAdd){const rv=Math.floor(Math.random()*(1320-232+1))+232;const r=await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});const row=Array.isArray(r)?r[0]:r;if(row&&row.id)created.push(row);}
+    if(created.length&&setChannels)setChannels(prev=>[...prev,...created]);
+    notify(`✅ ${created.length} added${skipped?` · ${skipped} skipped (duplicates)`:""}`);setBulkNames("");setBulkSav(false);};
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
