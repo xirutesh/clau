@@ -103,15 +103,19 @@ async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))r
 // the raw bytes (no base64) so even large videos work. Plays inline on the product page.
 async function uploadVideo(file){
   try{
-    if(!file)return null;
+    if(!file)return {error:"No file"};
     let s;try{s=JSON.parse(localStorage.getItem("auth")||"null")}catch{}
-    const tk=s&&s.token;if(!tk)return null;
+    const tk=s&&s.token;if(!tk)return {error:"Not logged in"};
     const ext=((file.name||"").split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4";
     const name=`vid-${Date.now()}-${Math.random().toString(36).slice(2,10)}.${ext}`;
     const r=await fetch(`${SB_URL}/storage/v1/object/product-images/${name}`,{method:"POST",headers:{apikey:SB_ANON,Authorization:`Bearer ${tk}`,"Content-Type":file.type||"video/mp4","x-upsert":"true","Cache-Control":"public, max-age=31536000, immutable"},body:file});
-    if(!r.ok)return null;
-    return `${SB_URL}/storage/v1/object/public/product-images/${name}`;
-  }catch{return null;}
+    if(!r.ok){let t="";try{t=await r.text()}catch{}
+      let hint="";
+      if(r.status===403||/row-level|policy|violates/i.test(t))hint=" — run the Storage upload policy SQL (I gave it to you)";
+      else if(r.status===413||/exceeded|maximum|too large|size/i.test(t))hint=" — Supabase free plan caps files at 50MB; use a smaller clip or YouTube";
+      return {error:`${r.status}${hint}`,raw:t.slice(0,160)};}
+    return {url:`${SB_URL}/storage/v1/object/public/product-images/${name}`};
+  }catch{return {error:"Network error"};}
 }
 // A stored/uploaded video file (play inline) vs an external link (open in a tab).
 function isVideoFile(u){return typeof u==="string"&&(/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u)||u.includes("/storage/v1/object/public/"));}
@@ -608,7 +612,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark onBusy={setImgBusy}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4,marginTop:8}}>🎥 Videos (paste a link, or upload a file):</div>
     <div style={{display:"flex",gap:8,marginBottom:8}}><input placeholder="Paste video link (YouTube, Telegram…)" value={vidLink} onChange={e=>setVidLink(e.target.value)} style={{...inp,flex:1,marginBottom:0}}/><button type="button" onClick={()=>{const u=vidLink.trim();if(u){setForm(f=>({...f,videos:[...(Array.isArray(f.videos)?f.videos:[]),u]}));setVidLink("");}}} style={{padding:"10px 16px",borderRadius:8,border:"none",background:G,color:"#fff",fontWeight:700,cursor:"pointer"}}>Add</button></div>
-    <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:8,background:vidUp?"#999":"#8E24AA",color:"#fff",fontWeight:700,fontSize:13,cursor:vidUp?"wait":"pointer",marginBottom:8}}><Upload size={14}/>{vidUp?"Uploading video…":"Upload video file"}<input type="file" accept="video/*" disabled={vidUp} style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;setVidUp(true);const url=await uploadVideo(f);setVidUp(false);if(url)setForm(fm=>({...fm,videos:[...(Array.isArray(fm.videos)?fm.videos:[]),url]}));else notify("Video upload failed (file too big?)","err");}}/></label>
+    <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:8,background:vidUp?"#999":"#8E24AA",color:"#fff",fontWeight:700,fontSize:13,cursor:vidUp?"wait":"pointer",marginBottom:8}}><Upload size={14}/>{vidUp?"Uploading video…":"Upload video file"}<input type="file" accept="video/*" disabled={vidUp} style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;setVidUp(true);const res=await uploadVideo(f);setVidUp(false);if(res&&res.url)setForm(fm=>({...fm,videos:[...(Array.isArray(fm.videos)?fm.videos:[]),res.url]}));else notify("Video upload failed: "+((res&&res.error)||"unknown"),"err");}}/></label>
     {Array.isArray(form.videos)&&form.videos.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>{form.videos.map((v,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"#f5f5f5",borderRadius:8,padding:"6px 10px"}}><Video size={14} color="#8E24AA"/><span style={{flex:1,fontSize:12,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{isVideoFile(v)?"📁 Uploaded video":v}</span><button type="button" onClick={()=>setForm(fm=>({...fm,videos:(fm.videos||[]).filter((_,j)=>j!==i)}))} style={{border:"none",background:R,color:"#fff",borderRadius:6,width:24,height:24,cursor:"pointer",fontWeight:700,flexShrink:0}}>×</button></div>)}</div>}
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
