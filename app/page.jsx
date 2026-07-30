@@ -300,14 +300,7 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
       </div>
     </div></div>
     <div style={{padding:"12px 16px 0"}}><div style={{background:"#fff",borderRadius:12,padding:"16px 20px",textAlign:"center"}}><div style={{color:G,fontWeight:700,fontSize:15}}>{`TOTAL COUNT:${ch.video_count>0?` ${ch.video_count}`:""}`}</div></div></div>
-    <div style={{padding:"8px 16px 24px"}}>{(()=>{const list=(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])).filter(v=>typeof v==="string"&&v.trim());
-      if(!list.length)return<div onClick={()=>setVid(ch)} style={{cursor:"pointer",background:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}><Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/></div>;
-      return list.map((img,i)=><div key={i} onClick={()=>{setPickImg(img);setVid(ch);}} style={{cursor:"pointer",marginBottom:12,borderRadius:10,overflow:"hidden",position:"relative",boxShadow:"0 1px 6px rgba(0,0,0,0.12)"}}>
-        <div style={{background:`url(${img}) center/cover`,paddingTop:"56.25%"}}/>
-        {i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{ch.name}</span><span style={{display:"flex",alignItems:"center",gap:4,fontSize:12}}><Eye size={14}/>{ch.views||0}</span></div>}
-      </div>);
-    })()}</div>
-    {Array.isArray(ch.videos)&&ch.videos.filter(Boolean).length>0&&<div style={{padding:"0 16px 24px"}}>
+    {Array.isArray(ch.videos)&&ch.videos.filter(Boolean).length>0&&<div style={{padding:"8px 16px 16px"}}>
       <div style={{fontWeight:800,fontSize:16,color:"#1a1a1a",marginBottom:10,display:"flex",alignItems:"center",gap:8}}><Video size={20} color="#8E24AA"/>Videos</div>
       {ch.videos.filter(Boolean).map((v,i)=>{
         if(isVideoFile(v))return<video key={i} src={v} controls playsInline preload="metadata" style={{width:"100%",borderRadius:10,marginBottom:12,background:"#000",maxHeight:420}}/>;
@@ -316,6 +309,13 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         return<a key={i} href={v} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:14,marginBottom:12,borderRadius:10,background:"linear-gradient(135deg,#8E24AA,#5E35B1)",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}><Play size={18}/>Watch video {ch.videos.filter(Boolean).length>1?`#${i+1}`:""}</a>;
       })}
     </div>}
+    {(()=>{const list=(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[])).filter(v=>typeof v==="string"&&v.trim());
+      if(!list.length)return null;// no photo -> render nothing (no placeholder box that interrupts the video)
+      return<div style={{padding:"8px 16px 24px"}}>{list.map((img,i)=><div key={i} onClick={()=>{setPickImg(img);setVid(ch);}} style={{cursor:"pointer",marginBottom:12,borderRadius:10,overflow:"hidden",position:"relative",boxShadow:"0 1px 6px rgba(0,0,0,0.12)"}}>
+        <div style={{background:`url(${img}) center/cover`,paddingTop:"56.25%"}}/>
+        {i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{ch.name}</span><span style={{display:"flex",alignItems:"center",gap:4,fontSize:12}}><Eye size={14}/>{ch.views||0}</span></div>}
+      </div>)}</div>;
+    })()}
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>{setVid(null);setPickImg(null);}}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>{setVid(null);setPickImg(null);}}/></div>
       <Gallery imgs={pickImg?[pickImg]:(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[]))}/>
