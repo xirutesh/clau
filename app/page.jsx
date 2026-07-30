@@ -56,7 +56,7 @@ function SC({label,value,sub,change,icon,iconBg,ready}){return<div style={{backg
 
 function VT({v,onClick}){return<div onClick={onClick} style={{cursor:"pointer",marginBottom:16}}><div style={{background:v.image_url?`url(${v.image_url}) center/cover`:"#1a1a1a",borderRadius:10,paddingTop:"56.25%",position:"relative"}}>{!v.image_url&&<Film size={48} color="#444" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>}<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700}}>{v.title||v.name}</div></div><div style={{display:"flex",justifyContent:"flex-end",padding:"4px 4px 0",color:"#555",fontSize:12,alignItems:"center",gap:4}}><Eye size={14}/>{v.views||0}</div></div>}
 
-// Baked-in watermark: a single "UflashBrazil.TV" in the bottom-right corner,
+// Baked-in watermark: a single "www.UflashBrazil.TV" in the bottom-right corner,
 // small and subtle. Survives download/screenshot.
 function stampWatermark(ctx,w,h){
   ctx.save();
@@ -66,7 +66,7 @@ function stampWatermark(ctx,w,h){
   const fs=Math.max(10,Math.round(w/34));
   ctx.font=`bold ${fs}px Arial, sans-serif`;
   ctx.textBaseline="middle";
-  const t="UflashBrazil.TV",m=Math.round(fs*0.9),by=h-m-fs/2;
+  const t="www.UflashBrazil.TV",m=Math.round(fs*0.9),by=h-m-fs/2;
   ctx.textAlign="right";ctx.fillText(t,w-m,by);
   ctx.restore();
 }
