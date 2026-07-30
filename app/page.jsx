@@ -399,7 +399,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
   const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:""});
   const[form,setForm]=useState(defF());
-  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);const[mig,setMig]=useState(null);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
@@ -460,6 +460,35 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     for(const name of toAdd){const rv=Math.floor(Math.random()*(1320-232+1))+232;const r=await api.aPost("channels",{name,price,video_count:0,category:bulkCat,top_selling:false,resolution:res,size:"",section_top_viewed:false,section_latest:false,delivery_link:null,image_url:null,description:null,views:rv});const row=Array.isArray(r)?r[0]:r;if(row&&row.id)created.push(row);}
     if(created.length&&setChannels)setChannels(prev=>[...prev,...created]);
     notify(`✅ ${created.length} added${skipped?` · ${skipped} skipped (duplicates)`:""}`);setBulkNames("");setBulkSav(false);};
+  // One-time (resumable) migration: move existing base64 photos into Supabase Storage,
+  // replacing them with short URLs. Skips products already on Storage, so it's safe to
+  // re-run. Works per-product to keep each request small.
+  const migratePhotos=async()=>{
+    if(mig&&mig.running)return;
+    setMig({running:true,done:0,total:0,migrated:0,failed:0});
+    const all=await api.aGet("channels","select=id&order=id");
+    const ids=Array.isArray(all)?all.map(c=>c.id):[];
+    let migrated=0,failed=0;setMig({running:true,done:0,total:ids.length,migrated:0,failed:0});
+    for(let i=0;i<ids.length;i++){const id=ids[i];
+      try{
+        const rows=await api.aGet("channels",`id=eq.${id}&select=image_url,images`);const row=rows&&rows[0];
+        if(row){
+          const imgsIn=Array.isArray(row.images)&&row.images.length?row.images:(row.image_url?[row.image_url]:[]);
+          if(imgsIn.some(v=>typeof v==="string"&&v.startsWith("data:"))){
+            const out=[];
+            for(const v of imgsIn){if(typeof v==="string"&&v.startsWith("data:")){const url=await uploadImage(v);out.push(url||v);}else if(typeof v==="string"&&v.trim())out.push(v);}
+            const clean=out.filter(v=>typeof v==="string"&&v.trim());
+            await api.aPatch("channels",`id=eq.${id}`,{image_url:clean[0]||null,images:clean});
+            if(clean.some(v=>v.startsWith("data:")))failed++;else migrated++;
+          }
+        }
+      }catch{failed++;}
+      setMig({running:true,done:i+1,total:ids.length,migrated,failed});
+    }
+    setMig({running:false,done:ids.length,total:ids.length,migrated,failed});
+    notify(`✅ Migration done: ${migrated} moved to Storage${failed?` · ${failed} pending (bucket ready?)`:""}`,failed?"err":"ok");
+    await reload();
+  };
   const sCfg=async u=>{const n={...config,...u};setConfig(n);await api.aPatch("site_config","id=eq.1",u);notify("✅ Saved");};
   const ban=async(id,b)=>{await api.aPatch("profiles",`id=eq.${id}`,{banned:!b});setUsers(u=>u.map(x=>x.id===id?{...x,banned:!b}:x));notify(b?"✅ User unbanned":"🚫 User banned");};
   const deliver=async(uid,link)=>{const u=users.find(x=>x.id===uid);if(u&&link){await api.aPatch("profiles",`id=eq.${uid}`,{delivery_link:link});setUsers(us=>us.map(x=>x.id===uid?{...x,delivery_link:link}:x));notify(`✅ Delivered to ${u.username||"user"}`);}};
@@ -579,7 +608,14 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
 
     {tab==="site"&&<SiteTab config={config} sCfg={sCfg} inp={inp}/>}
 
-    {tab==="stats"&&<div style={{padding:16}}>{[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:13,color:"#555",fontWeight:600,fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
+    {tab==="stats"&&<div style={{padding:16}}>
+      <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:14,border:"1px solid #eee"}}>
+        <div style={{fontWeight:700,fontSize:14,marginBottom:6}}>🛠 Move photos to Storage</div>
+        <div style={{fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>Moves old photos (stored as heavy text) into file storage so the site loads faster. Safe to run again anytime — it only touches photos not moved yet. Needs the <b>product-images</b> bucket created.</div>
+        {mig&&<div style={{marginBottom:10}}><div style={{height:8,background:"#eee",borderRadius:6,overflow:"hidden"}}><div style={{height:"100%",width:`${mig.total?Math.round(mig.done/mig.total*100):0}%`,background:mig.running?G:"#27ae60",transition:"width .2s"}}/></div><div style={{fontSize:12,color:"#555",marginTop:6}}>{mig.running?`Migrating… ${mig.done}/${mig.total}`:`Done ${mig.done}/${mig.total}`} · ✅ {mig.migrated} moved{mig.failed?` · ⚠️ ${mig.failed} pending`:""}</div></div>}
+        <button onClick={migratePhotos} disabled={mig&&mig.running} style={{width:"100%",padding:12,borderRadius:8,border:"none",fontWeight:700,color:"#fff",cursor:(mig&&mig.running)?"wait":"pointer",background:(mig&&mig.running)?"#999":"#1565C0"}}>{mig&&mig.running?"Migrating…":"Migrate photos now"}</button>
+      </div>
+      {[{l:"Channels",v:channels.length,c:"#3498db"},{l:"Total Views",v:aViews,c:"#9b59b6"},{l:"Revenue Potential",v:`$${channels.reduce((a,c)=>a+(c.price||0),0)}`,c:"#f39c12"},{l:"Registered Users",v:users.length,c:"#e74c3c"},{l:"Banned",v:users.filter(u=>u.banned).length,c:"#c0392b"},{l:"Display Users",v:fUsers,c:"#1abc9c"}].map((s,i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:16,marginBottom:10,borderLeft:`4px solid ${s.c}`}}><div style={{fontSize:13,color:"#555",fontWeight:600,fontWeight:600}}>{s.l}</div><div style={{fontSize:26,fontWeight:800,marginTop:4}}>{s.v}</div></div>)}</div>}
   </div>;
 }
 
