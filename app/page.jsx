@@ -411,6 +411,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);const[mig,setMig]=useState(null);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
+  const[cntText,setCntText]=useState("");const[cntSav,setCntSav]=useState(false);const[cntReport,setCntReport]=useState(null);
   const inp={width:"100%",padding:"10px 12px",borderRadius:8,border:"2px solid #aaa",fontSize:14,marginBottom:8,boxSizing:"border-box",color:"#333",background:"#fff"};
   const rawH=Array.isArray(config?.sections)?config.sections:[];
   const eS=(id,ti)=>{const f=rawH.find(s=>s.id===id);return f||{id,title:ti,visible:true};};
@@ -466,6 +467,30 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   // Move the selected products to another category. Changing `category` removes them
   // from the old one automatically (a product has a single category) — nothing is lost.
   const moveCatSel=async()=>{if(!bulkMoveCat){notify("Choose a category","err");return;}setSav(true);const n=sel.size;const ok=await api.aPatch("channels",`id=in.(${[...sel].join(",")})`,{category:bulkMoveCat});notify(ok?`📂 ${n} product(s) moved to ${bulkMoveCat}`:"Failed to move",ok?"ok":"err");setBulkMoveCat("");setSel(new Set());await reload();setSav(false);};
+  // Bulk-set Total Count from lines like "Product Name - 3443". Matches by name; a name
+  // that matches two products is skipped (left for later), and unknown names are reported.
+  const bulkCount=async()=>{
+    const lines=cntText.split("\n").map(l=>l.trim()).filter(Boolean);
+    if(!lines.length)return;
+    const parsed=[],bad=[];
+    for(const line of lines){const m=line.match(/^(.*\S)\s*[-–:]\s*(\d+)\s*$/);if(m)parsed.push({name:m[1].trim(),count:Number(m[2])});else bad.push(line);}
+    setCntSav(true);setCntReport(null);
+    const updates=[];let dup=0,notfound=0;const dupNames=[],nfNames=[];
+    for(const {name,count} of parsed){
+      const matches=channels.filter(c=>(c.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(matches.length===0){notfound++;nfNames.push(name);continue;}
+      if(matches.length>1){dup++;dupNames.push(name);continue;}
+      updates.push({id:matches[0].id,count});
+    }
+    // Group by count so products getting the same number are updated in one request.
+    const byCount=new Map();for(const u of updates){if(!byCount.has(u.count))byCount.set(u.count,[]);byCount.get(u.count).push(u.id);}
+    let updated=0;
+    for(const [count,ids] of byCount){const ok=await api.aPatch("channels",`id=in.(${ids.join(",")})`,{video_count:count});if(ok)updated+=ids.length;}
+    if(setChannels)setChannels(prev=>prev.map(c=>{const u=updates.find(x=>x.id===c.id);return u?{...c,video_count:u.count}:c;}));
+    setCntSav(false);
+    setCntReport({updated,dup,notfound,bad:bad.length,dupNames,nfNames});
+    notify(`✅ ${updated} count(s) set${dup?` · ${dup} skipped (duplicate name)`:""}${notfound?` · ${notfound} not found`:""}${bad.length?` · ${bad.length} bad format`:""}`,dup||notfound||bad.length?"err":"ok");
+  };
   const bulkAdd=async()=>{const lines=bulkNames.split("\n").map(l=>l.trim()).filter(l=>l.length>0);if(!lines.length)return;
     // Skip names that already exist, and duplicates within the pasted list.
     const existing=new Set(channels.map(c=>(c.name||"").trim().toLowerCase()));const seen=new Set();const toAdd=[];let skipped=0;
@@ -534,7 +559,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const fUsers=config?.fake_users??345;
   const fUA=config?.fake_users_annual??"+345";
 
-  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"tickets",l:"Tickets",i:<Info size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
+  const tabs=[{k:"channels",l:"Add",i:<Plus size={14}/>},{k:"edit",l:"Edit",i:<Edit size={14}/>},{k:"counts",l:"Count",i:<Video size={14}/>},{k:"users",l:"Users",i:<Users size={14}/>},{k:"payments",l:"Payments",i:<CreditCard size={14}/>},{k:"tickets",l:"Tickets",i:<Info size={14}/>},{k:"categories",l:"Categories",i:<FolderOpen size={14}/>},{k:"homepage",l:"Homepage",i:<Layout size={14}/>},{k:"site",l:"Site",i:<Monitor size={14}/>},{k:"stats",l:"Stats",i:<BarChart3 size={14}/>}];
   const chForm=<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:16}}><div style={{fontWeight:700,fontSize:14,marginBottom:12}}>{eCh?`✏️ ${eCh.name}`:"➕ New Channel"}</div>
     <input placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}/>
     <textarea placeholder="Description (shown when user clicks the product)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={{...inp,minHeight:50,resize:"vertical"}}/>
@@ -611,6 +636,22 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
       {sel.size>0&&<div style={{background:"#fff",borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><span style={{fontSize:13,fontWeight:700,color:"#333"}}>Move {sel.size} to category:</span><select value={bulkMoveCat} onChange={e=>setBulkMoveCat(e.target.value)} style={{padding:"8px 10px",borderRadius:8,border:"2px solid #aaa",fontSize:14,color:"#333",background:"#fff"}}><option value="">— choose —</option>{cats.filter(c=>c!=="INFO").map(c=><option key={c} value={c}>{c}</option>)}</select><button onClick={moveCatSel} disabled={sav} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#1565C0",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:13,opacity:sav?0.7:1}}>Move</button></div>}
       {edFiltered.length===0&&<div style={{textAlign:"center",color:"#999",fontSize:13,padding:"20px 0"}}>No products in this category.</div>}
       {edFiltered.map(ch=><div key={ch.id} style={{background:sel.has(ch.id)?"#FFF8E1":"#fff",borderRadius:10,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,border:sel.has(ch.id)?`2px solid ${G}`:"2px solid transparent"}}><input type="checkbox" checked={sel.has(ch.id)} onChange={()=>{const n=new Set(sel);n.has(ch.id)?n.delete(ch.id):n.add(ch.id);setSel(n)}} style={{width:18,height:18}}/>{ch.image_url&&<img src={ch.image_url} alt="" style={{width:50,height:28,objectFit:"cover",borderRadius:4}}/>}<div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14}}>{ch.name} {ch.top_selling&&<span style={{fontSize:10,background:"#FFF3E0",color:"#E65100",padding:"2px 6px",borderRadius:4}}>TOP</span>} {ch.section_top_viewed&&<span style={{fontSize:10,background:"#E3F2FD",color:"#1565C0",padding:"2px 6px",borderRadius:4}}>VIEWED</span>} {ch.section_latest&&<span style={{fontSize:10,background:"#E8F5E9",color:"#2E7D32",padding:"2px 6px",borderRadius:4}}>LATEST</span>}</div><div style={{fontSize:11,color:"#555",marginTop:2}}>{ch.category} · ${ch.price} · {ch.video_count} · {ch.resolution||"—"} · 👁 {ch.views||0}</div></div><button onClick={()=>startE(ch)} style={{width:32,height:32,borderRadius:8,border:"1px solid #ddd",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={13} color="#555"/></button></div>)}
+    </div>}
+
+    {tab==="counts"&&<div style={{padding:16}}>
+      <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12}}>
+        <div style={{fontWeight:700,fontSize:14,marginBottom:6}}>🔢 Set Total Count in bulk</div>
+        <div style={{fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>One per line as <b>Product Name - 3443</b>. Each product gets that number as its Total Count (matched by name). A name that matches two products is skipped (left for later); unknown names are reported.</div>
+        <textarea placeholder={"Product Name - 3443\nAnother Product - 512"} value={cntText} onChange={e=>setCntText(e.target.value)} style={{...inp,minHeight:120,resize:"vertical",fontFamily:"monospace"}}/>
+        <div style={{display:"flex",gap:8}}><button onClick={bulkCount} disabled={cntSav||!cntText.trim()} style={{flex:1,padding:11,border:"none",borderRadius:8,fontWeight:700,color:"#fff",cursor:(cntSav||!cntText.trim())?"default":"pointer",background:"#1565C0",opacity:(cntSav||!cntText.trim())?0.6:1}}>{cntSav?"Applying...":"Apply counts"}</button>{cntText.trim()&&<button onClick={()=>{setCntText("");setCntReport(null)}} style={{padding:"11px 16px",border:"1px solid #ddd",borderRadius:8,fontWeight:700,color:"#444",cursor:"pointer",background:"#fff"}}>Clear</button>}</div>
+      </div>
+      {cntReport&&<div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12,fontSize:13,lineHeight:1.7}}>
+        <div style={{fontWeight:700,marginBottom:6}}>Result</div>
+        <div style={{color:"#27ae60",fontWeight:700}}>✅ {cntReport.updated} updated</div>
+        {cntReport.dup>0&&<div style={{color:"#E65100"}}>⏭ {cntReport.dup} skipped (duplicate name): {cntReport.dupNames.join(", ")}</div>}
+        {cntReport.notfound>0&&<div style={{color:"#c0392b"}}>❓ {cntReport.notfound} not found: {cntReport.nfNames.join(", ")}</div>}
+        {cntReport.bad>0&&<div style={{color:"#c0392b"}}>⚠️ {cntReport.bad} line(s) had a bad format (need "Name - number")</div>}
+      </div>}
     </div>}
 
     {tab==="users"&&<div style={{padding:16}}><div style={{fontWeight:700,fontSize:16,marginBottom:12}}>👥 Users ({users.length})</div>{users.map(u=><div key={u.id} style={{background:u.banned?"#FDE8E8":"#fff",borderRadius:10,padding:14,marginBottom:8,border:u.banned?"2px solid #fcc":"1px solid #eee"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:700,fontSize:14}}>{u.username||"user"}</div><div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:u.role==="admin"?"#E65100":"#E8F5E9",color:u.role==="admin"?"#fff":"#2E7D32"}}>{(u.role||"user").toUpperCase()}</span>{u.banned&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:R,color:"#fff"}}>BANNED</span>}{u.delivery_link&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,background:"#E3F2FD",color:"#1565C0"}}>DELIVERED</span>}</div></div><div style={{display:"flex",gap:5}}>{u.role!=="admin"&&<button onClick={()=>ban(u.id,u.banned)} style={{padding:"6px 10px",borderRadius:8,border:"none",background:u.banned?"#27ae60":R,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}>{u.banned?"Unban":"Ban"}</button>}{u.role!=="admin"&&<button onClick={()=>{const l=prompt("Delivery link:",config?.global_delivery_link||"");if(l)deliver(u.id,l)}} style={{padding:"6px 10px",borderRadius:8,border:"none",background:"#1565C0",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:11}}><Send size={11}/> Deliver</button>}</div></div>{u.delivery_link&&<div style={{marginTop:8,fontSize:12,color:"#1565C0",background:"#E3F2FD",padding:"6px 10px",borderRadius:6,wordBreak:"break-all"}}>📦 {u.delivery_link}</div>}</div>)}</div>}
