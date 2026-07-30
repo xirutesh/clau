@@ -554,7 +554,7 @@ export default function App(){
   }else{clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);}};
   const navInfo=(p)=>{setIP(p);setSCh(null);setMO(false);setPendCh(null);if(p){homeScroll.current=window.scrollY;saveRoute({t:"info",p});window.history.pushState({t:"info",p},"","#"+p);}else{clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);}};
   const navHome=()=>{setSCh(null);setIP(null);setMO(false);setPendCh(null);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);};
-  const openAdmin=()=>{setSAd(true);saveRoute({t:"admin"});window.history.pushState({t:"admin"},"",window.location.pathname);};
+  const openAdmin=()=>{setSAd(true);window.history.pushState({t:"admin"},"","#admin");};
   const closeAdmin=()=>{setSAd(false);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);load();};
   const openAuth=(m)=>{setSCh(null);setIP(null);setMO(false);setSAd(false);setPendCh(null);setAM(m);setSA(true);homeScroll.current=window.scrollY;saveRoute({t:"auth",m});window.history.pushState({t:"auth",m},"","#"+m);window.scrollTo(0,0);};
   const closeAuth=()=>{setSA(false);clearRoute();window.history.pushState({t:"home"},"",window.location.pathname);window.scrollTo(0,0);};
@@ -605,13 +605,15 @@ export default function App(){
       /^\d{5}$/.test(h)?{t:"ch",id:h}
       :["p053","p041","p072"].includes(h)?{t:"info",p:h}
       :(h==="login"||h==="signup")?{t:"auth",m:h}
+      :h==="admin"?{t:"admin"}
       :{t:"home"},"",window.location.href);
-    // Only an explicit shared link (URL hash) opens a specific view. A plain
-    // re-entry with no hash always lands on the dashboard — we no longer restore
-    // the last-browsed product/info/admin/auth from localStorage.
+    // Only an explicit URL hash opens a specific view. A plain re-entry with no hash
+    // always lands on the dashboard — we no longer restore the last view from
+    // localStorage. #admin keeps the admin panel open across F5 (admins only).
     if(["p053","p041","p072"].includes(h)){setIP(h);}
     else if(h==="login"||h==="signup"){if(!s){setAM(h);setSA(true);}}
     else if(/^\d{5}$/.test(h)){setPendCh(h);}// display ID, resolve after load
+    else if(h==="admin"){if(s?.role==="admin")setSAd(true);else clearRoute();}
     else{clearRoute();}// no deep link -> dashboard
     setMounted(true);
   },[]);
