@@ -46,7 +46,14 @@ export async function POST(request) {
   const bytes = Buffer.from(m[2], "base64");
   if (!bytes.length) return Response.json({ error: "Empty image" }, { status: 400 });
 
-  const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+  const ext = contentType.includes("png") ? "png"
+    : contentType.includes("webp") ? "webp"
+    : contentType.includes("gif") ? "gif"
+    : contentType.includes("mp4") ? "mp4"
+    : contentType.includes("quicktime") ? "mov"
+    : contentType.includes("webm") ? "webm"
+    : contentType.startsWith("video/") ? "mp4"
+    : "jpg";
   const name = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
   const up = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`, {

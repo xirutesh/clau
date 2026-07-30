@@ -99,6 +99,10 @@ async function uploadImage(dataUrl){
 const uploadCache=new Map();
 function startUpload(dataUrl){if(!uploadCache.has(dataUrl))uploadCache.set(dataUrl,uploadImage(dataUrl).catch(()=>null));return uploadCache.get(dataUrl);}
 async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))return v;const p=uploadCache.get(v)||startUpload(v);const url=await p;return url||v;}
+// Upload a video FILE (from picker / iPhone camera roll) to Storage; returns its URL.
+function uploadVideo(file){return new Promise(resolve=>{if(!file){resolve(null);return;}const r=new FileReader();r.onerror=()=>resolve(null);r.onload=e=>{uploadImage(e.target.result).then(resolve).catch(()=>resolve(null));};r.readAsDataURL(file);});}
+// A stored/uploaded video file (play inline) vs an external link (open in a tab).
+function isVideoFile(u){return typeof u==="string"&&(/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u)||u.includes("/storage/v1/object/public/"));}
 // Single-image uploader (used by the gift-card proof). value/onChange are a string.
 function ImgUp({value,onChange,watermark}){
   const ref=useRef(onChange);ref.current=onChange;
@@ -271,6 +275,12 @@ function ChPage({ch,config,auth,onAuth,pendingSub,onSubmitted}){
         {i===0&&<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:13,fontWeight:700,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{ch.name}</span><span style={{display:"flex",alignItems:"center",gap:4,fontSize:12}}><Eye size={14}/>{ch.views||0}</span></div>}
       </div>);
     })()}</div>
+    {Array.isArray(ch.videos)&&ch.videos.filter(Boolean).length>0&&<div style={{padding:"0 16px 24px"}}>
+      <div style={{fontWeight:800,fontSize:16,color:"#1a1a1a",marginBottom:10,display:"flex",alignItems:"center",gap:8}}><Video size={20} color="#8E24AA"/>Videos</div>
+      {ch.videos.filter(Boolean).map((v,i)=>isVideoFile(v)
+        ?<video key={i} src={v} controls playsInline preload="metadata" style={{width:"100%",borderRadius:10,marginBottom:12,background:"#000",maxHeight:420}}/>
+        :<a key={i} href={v} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:14,marginBottom:12,borderRadius:10,background:"linear-gradient(135deg,#8E24AA,#5E35B1)",color:"#fff",fontWeight:700,fontSize:15,textDecoration:"none"}}><Play size={18}/>Watch video {ch.videos.filter(Boolean).length>1?`#${i+1}`:""}</a>)}
+    </div>}
     {vid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto"}} onClick={()=>{setVid(null);setPickImg(null);}}><div style={{background:"#fff",borderRadius:4,width:"100%",maxWidth:500,overflow:"hidden",border:"1px solid #ccc"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #ddd"}}><span style={{fontSize:14,color:"#333"}}>N:{dId(ch.id)} {ch.name}</span><X size={20} color="#333" style={{cursor:"pointer"}} onClick={()=>{setVid(null);setPickImg(null);}}/></div>
       <Gallery imgs={pickImg?[pickImg]:(gallery&&gallery.length?gallery:(ch.image_url?[ch.image_url]:[]))}/>
@@ -406,9 +416,9 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const[toast,setToast]=useState(null);
   const notify=(msg,type="ok")=>setToast({msg,type,k:Date.now()});
   const cats=Array.isArray(config?.categories)?config.categories:defCats;
-  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:"",is_mine:false});
+  const defF=()=>({name:"",price:String(config?.default_price||50),video_count:"",category:config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action",top_selling:false,resolution:config?.default_resolution||"1080P",size:"",duration:"",section_top_viewed:false,section_latest:false,delivery_link:"",image_url:"",images:[],description:"",is_mine:false,videos:[]});
   const[form,setForm]=useState(defF());
-  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);const[mig,setMig]=useState(null);
+  const[sel,setSel]=useState(new Set());const[cDel,setCDel]=useState(false);const[pDel,setPDel]=useState(false);const[chSearch,setChSearch]=useState("");const[bulkPrice,setBulkPrice]=useState("");const[bulkMoveCat,setBulkMoveCat]=useState("");const[catF,setCatF]=useState(()=>{try{return localStorage.getItem("admCat")||"all"}catch{return"all"}});const[imgDirty,setImgDirty]=useState(false);const[imgBusy,setImgBusy]=useState(false);const[mig,setMig]=useState(null);const[vidLink,setVidLink]=useState("");const[vidUp,setVidUp]=useState(false);
   const[users,setUsers]=useState([]);const[subs,setSubs]=useState([]);const[tickets,setTickets]=useState([]);const[eSec,setESec]=useState(null);const[secT,setSecT]=useState("");const[newCat,setNewCat]=useState("");
   const[bulkNames,setBulkNames]=useState("");const[bulkCat,setBulkCat]=useState(config?.default_category||cats.filter(c=>c!=="INFO")[0]||"Action");const[bulkSav,setBulkSav]=useState(false);
   const[cntText,setCntText]=useState("");const[cntSav,setCntSav]=useState(false);const[cntReport,setCntReport]=useState(null);
@@ -441,7 +451,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     const origImgs=(Array.isArray(form.images)?form.images:[]).filter(v=>typeof v==="string"&&v.trim());
     let imgs=origImgs;
     if((!editing||imgDirty)&&imgs.some(v=>v.startsWith("data:")))imgs=await Promise.all(imgs.map(resolveUpload));
-    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,is_mine:!!form.is_mine,views:editing?(editing.views||rv):rv};
+    const data={name:form.name,price:Number(form.price)||50,video_count:Number(form.video_count)||0,category:form.category,top_selling:form.top_selling,resolution:form.resolution||"",size:form.size||"",duration:form.duration||"",section_top_viewed:form.section_top_viewed,section_latest:form.section_latest,delivery_link:form.delivery_link||null,description:form.description||null,is_mine:!!form.is_mine,videos:(Array.isArray(form.videos)?form.videos:[]).filter(v=>typeof v==="string"&&v.trim()),views:editing?(editing.views||rv):rv};
     // Only send images when they actually changed (editing text on a product with many
     // photos shouldn't re-send anything).
     if(!editing||imgDirty){data.image_url=imgs[0]||null;data.images=imgs;}
@@ -544,7 +554,7 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
   const delTicket=async(t)=>{await api.aDel("tickets",`id=eq.${t.id}`);setTickets(x=>x.filter(v=>v.id!==t.id));notify("🗑 Ticket deleted");};
   const startE=ch=>{setECh(ch);setImgDirty(false);
     const base=ch.image_url?[ch.image_url]:[];
-    setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",images:base,description:ch.description||"",is_mine:!!ch.is_mine});
+    setForm({name:ch.name,price:String(ch.price||""),video_count:String(ch.video_count||""),category:ch.category||"Action",top_selling:!!ch.top_selling,resolution:ch.resolution||"",size:ch.size||"",duration:ch.duration||"",section_top_viewed:!!ch.section_top_viewed,section_latest:!!ch.section_latest,delivery_link:ch.delivery_link||"",image_url:ch.image_url||"",images:base,description:ch.description||"",is_mine:!!ch.is_mine,videos:Array.isArray(ch.videos)?ch.videos:[]});
     // The list omits the gallery to stay light; pull this product's full set now.
     api.get("channels",`id=eq.${ch.id}&select=images,image_url`).then(rows=>{const imgs=rows&&rows[0]&&rows[0].images;const g=Array.isArray(imgs)&&imgs.length?imgs:base;setForm(f=>({...f,images:g,image_url:g[0]||""}));}).catch(()=>{});};
   // Edit tab: products filtered by category chip AND the name search box.
@@ -569,6 +579,10 @@ function Admin({auth,channels,setChannels,config,setConfig,onClose,reload,onLogo
     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>{cats.filter(c=>c!=="INFO").map(c=><option key={c}>{c}</option>)}</select>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4}}>Images (first one is the cover):</div>
     <ImgUpMulti value={form.images} onChange={imgs=>{setForm({...form,images:imgs,image_url:imgs[0]||""});setImgDirty(true);}} watermark onBusy={setImgBusy}/>
+    <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:4,marginTop:8}}>🎥 Videos (paste a link, or upload a file):</div>
+    <div style={{display:"flex",gap:8,marginBottom:8}}><input placeholder="Paste video link (YouTube, Telegram…)" value={vidLink} onChange={e=>setVidLink(e.target.value)} style={{...inp,flex:1,marginBottom:0}}/><button type="button" onClick={()=>{const u=vidLink.trim();if(u){setForm(f=>({...f,videos:[...(Array.isArray(f.videos)?f.videos:[]),u]}));setVidLink("");}}} style={{padding:"10px 16px",borderRadius:8,border:"none",background:G,color:"#fff",fontWeight:700,cursor:"pointer"}}>Add</button></div>
+    <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:8,background:vidUp?"#999":"#8E24AA",color:"#fff",fontWeight:700,fontSize:13,cursor:vidUp?"wait":"pointer",marginBottom:8}}><Upload size={14}/>{vidUp?"Uploading video…":"Upload video file"}<input type="file" accept="video/*" disabled={vidUp} style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;setVidUp(true);const url=await uploadVideo(f);setVidUp(false);if(url)setForm(fm=>({...fm,videos:[...(Array.isArray(fm.videos)?fm.videos:[]),url]}));else notify("Video upload failed (file too big?)","err");}}/></label>
+    {Array.isArray(form.videos)&&form.videos.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>{form.videos.map((v,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"#f5f5f5",borderRadius:8,padding:"6px 10px"}}><Video size={14} color="#8E24AA"/><span style={{flex:1,fontSize:12,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{isVideoFile(v)?"📁 Uploaded video":v}</span><button type="button" onClick={()=>setForm(fm=>({...fm,videos:(fm.videos||[]).filter((_,j)=>j!==i)}))} style={{border:"none",background:R,color:"#fff",borderRadius:6,width:24,height:24,cursor:"pointer",fontWeight:700,flexShrink:0}}>×</button></div>)}</div>}
     <input placeholder="Delivery link (optional)" value={form.delivery_link} onChange={e=>setForm({...form,delivery_link:e.target.value})} style={inp}/>
     <div style={{fontSize:14,color:"#333",fontWeight:700,marginBottom:6}}>Show in:</div>
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10}}><label style={{display:"flex",alignItems:"center",gap:6,fontSize:14,cursor:"pointer",color:"#333",fontWeight:500}}><input type="checkbox" checked={form.section_latest} onChange={e=>setForm({...form,section_latest:e.target.checked})}/>Latest Updates</label></div>
@@ -784,7 +798,7 @@ export default function App(){
       // Products + config in PARALLEL (were sequential). Show the page as soon as these
       // two are ready — don't make the whole catalog wait on anything else.
       const[c,f]=await Promise.all([
-        api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views,is_mine&order=id"),
+        api.get("channels","select=id,name,price,video_count,category,top_selling,resolution,size,duration,section_top_viewed,section_latest,delivery_link,image_url,description,views,is_mine,videos&order=id"),
         api.getOne("site_config","id=eq.1&select=*"),
       ]);
       setChs(c);if(f)setCfg({...defCfg,...f,sections:Array.isArray(f.sections)?f.sections:defCfg.sections,categories:Array.isArray(f.categories)?f.categories:defCfg.categories,manual_payments:Array.isArray(f.manual_payments)?f.manual_payments:[]});
