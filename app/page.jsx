@@ -104,15 +104,21 @@ async function resolveUpload(v){if(typeof v!=="string"||!v.startsWith("data:"))r
 async function uploadVideo(file){
   if(!file)return {error:"No file"};
   const ext=((file.name||"").split(".").pop()||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"")||"mp4";
-  const post=()=>{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}
-    return fetch(`/api/upload-video?ext=${ext}`,{method:"POST",headers:{"Content-Type":file.type||"video/mp4",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:file});};
+  const sign=()=>{let tk;try{tk=JSON.parse(localStorage.getItem("auth")||"null")?.token}catch{}
+    return fetch("/api/sign-upload",{method:"POST",headers:{"Content-Type":"application/json",...(tk?{"Authorization":`Bearer ${tk}`}:{})},body:JSON.stringify({ext})});};
   try{
-    let r=await post();
-    if(r.status===401&&await api.refreshToken())r=await post();// token expired -> refresh once
-    if(!r.ok){let msg="";try{msg=(await r.json()).error||""}catch{}
-      const hint=r.status===413?" — file over the limit (Supabase free plan caps ~50MB; use a shorter clip or YouTube)":r.status===401?" — session expired, log out and back in":"";
-      return {error:`${r.status}${hint}${msg?": "+msg:""}`};}
-    const d=await r.json();return {url:d.url};
+    // 1) Ask the server for a signed upload URL (tiny request — no size limit hit here).
+    let sr=await sign();
+    if(sr.status===401&&await api.refreshToken())sr=await sign();
+    if(!sr.ok){let m="";try{m=(await sr.json()).error||""}catch{}return {error:`${sr.status}${sr.status===401?" — session expired, log out and back in":""}${m?": "+m:""}`};}
+    const {signedUrl,publicUrl}=await sr.json();
+    if(!signedUrl)return {error:"No signed url"};
+    // 2) Upload the file DIRECTLY to Supabase (browser -> Supabase, no Vercel size cap).
+    const up=await fetch(signedUrl,{method:"PUT",headers:{"Content-Type":file.type||"video/mp4","Cache-Control":"public, max-age=31536000, immutable"},body:file});
+    if(!up.ok){let t="";try{t=await up.text()}catch{}
+      const hint=up.status===413||/exceeded|maximum|too large/i.test(t)?" — over Supabase's file-size limit (free plan ~50MB): use a shorter clip or YouTube":"";
+      return {error:`${up.status}${hint}`};}
+    return {url:publicUrl};
   }catch{return {error:"Network error"};}
 }
 // A stored/uploaded video file (play inline) vs an external link (open in a tab).
